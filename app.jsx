@@ -158,41 +158,19 @@ function App() {
         display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
       }}>
-        {/* Sticky header: wordmark + mode toggle */}
-        <div style={{ padding: '20px 20px 0', flexShrink: 0 }}>
-          {/* Wordmark */}
-          <div>
-            <div style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 10, letterSpacing: 3, color: theme.muted,
-              textTransform: 'uppercase',
-            }}>Fourier Canvas</div>
-            <div style={{
-              fontFamily: 'Newsreader, ui-serif, Georgia, serif',
-              fontSize: 22, lineHeight: 1.15, marginTop: 3,
-              fontWeight: 400, letterSpacing: -0.4,
-            }}>
-              <em style={{ fontStyle: 'italic' }}>f</em>(t) = <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 17 }}>Σ cₙ e<sup style={{ fontSize: 10 }}>i2πnt</sup></span>
-            </div>
-          </div>
-
-          {/* Mode toggle */}
+        {/* Wordmark */}
+        <div style={{ padding: '20px 20px 16px', flexShrink: 0 }}>
           <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0,
-            border: `1px solid ${theme.line}`, borderRadius: 8, overflow: 'hidden',
-            marginTop: 14, marginBottom: 16,
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 10, letterSpacing: 3, color: theme.muted,
+            textTransform: 'uppercase',
+          }}>Fourier Canvas</div>
+          <div style={{
+            fontFamily: 'Newsreader, ui-serif, Georgia, serif',
+            fontSize: 22, lineHeight: 1.15, marginTop: 3,
+            fontWeight: 400, letterSpacing: -0.4,
           }}>
-            {[['draw', tr.draw], ['studio', tr.studio]].map(([k, label]) => (
-              <button key={k} onClick={() => setMode(k)}
-                style={{
-                  padding: '10px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif',
-                  fontWeight: 600, letterSpacing: 0.4, cursor: 'pointer',
-                  background: mode === k ? theme.ink : 'transparent',
-                  color: mode === k ? theme.panel : theme.muted,
-                  border: 'none',
-                  transition: 'all 120ms',
-                }}>{label}</button>
-            ))}
+            <em style={{ fontStyle: 'italic' }}>f</em>(t) = <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 17 }}>Σ cₙ e<sup style={{ fontSize: 10 }}>i2πnt</sup></span>
           </div>
         </div>
 
@@ -538,6 +516,32 @@ function App() {
           </div>
         )}
       </main>
+
+      {/* Mode toggle — fixed, always visible regardless of browser size */}
+      <div style={{
+        position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+        zIndex: 200,
+        display: 'flex',
+        background: theme.panel,
+        border: `1px solid ${theme.line}`,
+        borderRadius: 10,
+        overflow: 'hidden',
+        boxShadow: themeKey === 'graphite'
+          ? '0 4px 20px rgba(0,0,0,0.5)'
+          : '0 4px 20px rgba(0,0,0,0.12)',
+      }}>
+        {[['draw', tr.draw], ['studio', tr.studio]].map(([k, label]) => (
+          <button key={k} onClick={() => setMode(k)}
+            style={{
+              padding: '10px 22px', fontSize: 12, fontFamily: 'Inter, sans-serif',
+              fontWeight: 600, letterSpacing: 0.4, cursor: 'pointer',
+              background: mode === k ? theme.ink : 'transparent',
+              color: mode === k ? theme.panel : theme.muted,
+              border: 'none',
+              transition: 'all 120ms',
+            }}>{label}</button>
+        ))}
+      </div>
     </div>
   );
 }
