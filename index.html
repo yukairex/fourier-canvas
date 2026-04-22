@@ -127,13 +127,13 @@ function centerPath(points) {
 
 // Evaluate the Fourier series at time t (0..1) with the top K coefficients.
 // Returns array of vector tip positions (the last one is the drawing tip).
-function evalFourier(coeffs, t, K) {
+function evalFourier(coeffs, t, K, phaseOffset = 0) {
   let x = 0, y = 0;
   const tips = [{ x: 0, y: 0 }];
   const limit = Math.min(K, coeffs.length);
   for (let i = 0; i < limit; i++) {
     const c = coeffs[i];
-    const angle = c.freq * 2 * Math.PI * t + c.phase;
+    const angle = c.freq * 2 * Math.PI * t + c.phase + phaseOffset;
     x += c.amp * Math.cos(angle);
     y += c.amp * Math.sin(angle);
     tips.push({ x, y });
@@ -243,13 +243,52 @@ function presetSpiral(steps = 500) {
   return pts;
 }
 
+// 3:2 Lissajous figure with π/4 phase offset
+function presetLissajous(steps = 600) {
+  const pts = [];
+  for (let i = 0; i < steps; i++) {
+    const t = (i / steps) * Math.PI * 2;
+    pts.push({ x: 210 * Math.sin(3 * t + Math.PI / 4), y: 210 * Math.sin(2 * t) });
+  }
+  return pts;
+}
+
+// 5-cusp epicycloid: rolling circle R=160, r=40
+function presetEpicycloid(steps = 600) {
+  const pts = [];
+  for (let i = 0; i < steps; i++) {
+    const t = (i / steps) * Math.PI * 2;
+    pts.push({
+      x: 200 * Math.cos(t) - 40 * Math.cos(5 * t),
+      y: 200 * Math.sin(t) - 40 * Math.sin(5 * t),
+    });
+  }
+  return pts;
+}
+
+// 3-cusped hypocycloid (deltoid)
+function presetDeltoid(steps = 600) {
+  const pts = [];
+  for (let i = 0; i < steps; i++) {
+    const t = (i / steps) * Math.PI * 2;
+    pts.push({
+      x: 160 * Math.cos(t) + 80 * Math.cos(2 * t),
+      y: 160 * Math.sin(t) - 80 * Math.sin(2 * t),
+    });
+  }
+  return pts;
+}
+
 const PRESETS = {
-  heart:    { label: 'Heart',    fn: presetHeart },
-  star:     { label: 'Star',     fn: presetStar },
-  infinity: { label: 'Lemniscate', fn: presetInfinity },
-  flower:   { label: 'Rosette',  fn: presetFlower },
-  square:   { label: 'Square',   fn: presetSquare },
-  spiral:   { label: 'Spiral',   fn: presetSpiral },
+  heart:      { label: 'Heart',      fn: presetHeart },
+  star:       { label: 'Star',       fn: presetStar },
+  infinity:   { label: 'Lemniscate', fn: presetInfinity },
+  flower:     { label: 'Rosette',    fn: presetFlower },
+  square:     { label: 'Square',     fn: presetSquare },
+  spiral:     { label: 'Spiral',     fn: presetSpiral },
+  lissajous:  { label: 'Lissajous',  fn: presetLissajous },
+  epicycloid: { label: 'Epicycloid', fn: presetEpicycloid },
+  deltoid:    { label: 'Deltoid',    fn: presetDeltoid },
 };
 
 window.PRESETS = PRESETS;
@@ -309,6 +348,15 @@ const I18N = {
     amp: 'amp',
     phase: 'phase',
     playback: 'Playback',
+    phaseOffset: 'Phase Offset',
+    stroke: 'Stroke',
+    traceColor: 'Color',
+    traceWidth: 'Width',
+    undo: 'Undo',
+    redo: 'Redo',
+    export: 'Export',
+    exportSVG: 'SVG',
+    exportPNG: 'PNG',
   },
 
   zh: {
@@ -359,6 +407,15 @@ const I18N = {
     amp: '振幅',
     phase: '相位',
     playback: '播放',
+    phaseOffset: '相位偏移',
+    stroke: '笔触',
+    traceColor: '颜色',
+    traceWidth: '粗细',
+    undo: '撤销',
+    redo: '重做',
+    export: '导出',
+    exportSVG: 'SVG',
+    exportPNG: 'PNG',
   },
 
   ja: {
@@ -409,6 +466,15 @@ const I18N = {
     amp: '振幅',
     phase: '位相',
     playback: '再生',
+    phaseOffset: '位相オフセット',
+    stroke: 'ストローク',
+    traceColor: '色',
+    traceWidth: '太さ',
+    undo: '元に戻す',
+    redo: 'やり直す',
+    export: 'エクスポート',
+    exportSVG: 'SVG',
+    exportPNG: 'PNG',
   },
 
   fr: {
@@ -459,6 +525,15 @@ const I18N = {
     amp: 'amp.',
     phase: 'phase',
     playback: 'Lecture',
+    phaseOffset: 'Décalage de phase',
+    stroke: 'Tracé',
+    traceColor: 'Couleur',
+    traceWidth: 'Épaisseur',
+    undo: 'Annuler',
+    redo: 'Rétablir',
+    export: 'Exporter',
+    exportSVG: 'SVG',
+    exportPNG: 'PNG',
   },
 
   es: {
@@ -509,6 +584,15 @@ const I18N = {
     amp: 'amp.',
     phase: 'fase',
     playback: 'Reproducción',
+    phaseOffset: 'Desfase de fase',
+    stroke: 'Trazo',
+    traceColor: 'Color',
+    traceWidth: 'Grosor',
+    undo: 'Deshacer',
+    redo: 'Rehacer',
+    export: 'Exportar',
+    exportSVG: 'SVG',
+    exportPNG: 'PNG',
   },
 };
 
@@ -876,6 +960,7 @@ function FourierCanvas({
   N, speed, playing, showCircles, showVectors, showUserPath, trailMode,
   onDrawStart, onDrawPoint, onDrawEnd, canDraw,
   onTimeUpdate,
+  traceColor, traceWidth, phaseOffset,
 }) {
   const canvasRef = React.useRef(null);
   const overlayRef = React.useRef(null);
@@ -1072,7 +1157,7 @@ function FourierCanvas({
       const t = tRef.current;
       onTimeUpdate && onTimeUpdate(t);
 
-      const tips = evalFourier(coeffs, t, N);
+      const tips = evalFourier(coeffs, t, N, phaseOffset || 0);
       const tip = tips[tips.length - 1];
 
       if (playing) tracePtsRef.current.push({ x: tip.x, y: tip.y, age: 0 });
@@ -1092,12 +1177,14 @@ function FourierCanvas({
 
       // Trace
       const trace = tracePtsRef.current;
+      const tColor = traceColor || theme.trace;
+      const tWidth = traceWidth || 2.2;
       if (trace.length > 1) {
-        ctx.lineWidth = 2.2 / scale;
+        ctx.lineWidth = tWidth / scale;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         if (maxAge === Infinity) {
-          ctx.strokeStyle = theme.trace;
+          ctx.strokeStyle = tColor;
           ctx.beginPath();
           ctx.moveTo(trace[0].x, trace[0].y);
           for (let i = 1; i < trace.length; i++) ctx.lineTo(trace[i].x, trace[i].y);
@@ -1106,7 +1193,7 @@ function FourierCanvas({
           for (let i = 1; i < trace.length; i++) {
             const a = 1 - trace[i].age / maxAge;
             if (a <= 0) continue;
-            ctx.strokeStyle = hexWithAlpha(theme.trace, a);
+            ctx.strokeStyle = hexWithAlpha(tColor, a);
             ctx.beginPath();
             ctx.moveTo(trace[i - 1].x, trace[i - 1].y);
             ctx.lineTo(trace[i].x, trace[i].y);
@@ -1141,7 +1228,7 @@ function FourierCanvas({
       }
 
       // Tip dot
-      ctx.fillStyle = theme.trace;
+      ctx.fillStyle = tColor;
       ctx.beginPath();
       ctx.arc(tip.x, tip.y, 4 / scale, 0, Math.PI * 2);
       ctx.fill();
@@ -1155,7 +1242,7 @@ function FourierCanvas({
 
     rafRef.current = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(rafRef.current); lastTsRef.current = 0; };
-  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode]);
+  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset]);
 
   // Pointer events: pan (right-click or when !canDraw) vs draw (left click when canDraw)
   const getCanvasPt = (e) => {
@@ -1318,8 +1405,19 @@ function App() {
   const [t, setT] = useState(0);
   const [editMode, setEditMode] = useState(false);
 
+  // undo/redo
+  const historyRef = useRef([]);
+  const histIdxRef = useRef(-1);
+
+  // stroke customization
+  const [traceColor, setTraceColor] = useState(null); // null = theme default
+  const [traceWidth, setTraceWidth] = useState(2.2);
+
+  // phase offset
+  const [phaseOffset, setPhaseOffset] = useState(0);
+
   // When a preset is chosen, compute coefficients.
-  const applyPath = useCallback((points) => {
+  const applyPath = useCallback((points, presetKey = null) => {
     if (!points || points.length < 4) return;
     const closed = closePath(points);
     const { centered } = centerPath(closed);
@@ -1329,6 +1427,11 @@ function App() {
     setPathResampled(resampled);
     setCoeffs(c);
     setPlaying(true);
+    const h = historyRef.current.slice(0, histIdxRef.current + 1);
+    h.push({ userPath: centered, coeffs: c, preset: presetKey });
+    if (h.length > 50) h.shift();
+    historyRef.current = h;
+    histIdxRef.current = h.length - 1;
   }, []);
 
   // Load default preset on mount
@@ -1339,7 +1442,7 @@ function App() {
 
   const selectPreset = (key) => {
     setActivePreset(key);
-    if (PRESETS[key]) applyPath(PRESETS[key].fn());
+    if (PRESETS[key]) applyPath(PRESETS[key].fn(), key);
   };
 
   // Drawing handlers
@@ -1373,6 +1476,101 @@ function App() {
     setRawDrawing([]);
     setActivePreset(null);
   };
+
+  const undo = useCallback(() => {
+    if (histIdxRef.current <= 0) return;
+    histIdxRef.current--;
+    const snap = historyRef.current[histIdxRef.current];
+    if (!snap) return;
+    setUserPath(snap.userPath);
+    setCoeffs(snap.coeffs);
+    setActivePreset(snap.preset);
+  }, []);
+
+  const redo = useCallback(() => {
+    if (histIdxRef.current >= historyRef.current.length - 1) return;
+    histIdxRef.current++;
+    const snap = historyRef.current[histIdxRef.current];
+    if (!snap) return;
+    setUserPath(snap.userPath);
+    setCoeffs(snap.coeffs);
+    setActivePreset(snap.preset);
+  }, []);
+
+  const exportSVG = useCallback(() => {
+    const aC = mode === 'studio' ? studioCoeffs : coeffs;
+    const aN = mode === 'studio' ? studioCoeffs.length : N;
+    if (!aC || !aC.length) return;
+    const steps = 2000;
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const tips = evalFourier(aC, i / steps, aN, phaseOffset);
+      pts.push(tips[tips.length - 1]);
+    }
+    const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+    const margin = 30;
+    const minX = Math.min(...xs) - margin, maxX = Math.max(...xs) + margin;
+    const minY = Math.min(...ys) - margin, maxY = Math.max(...ys) + margin;
+    const W = maxX - minX, H = maxY - minY;
+    const color = traceColor || theme.trace;
+    const d = 'M ' + pts.map((p) => `${(p.x - minX).toFixed(2)},${(p.y - minY).toFixed(2)}`).join(' L ') + ' Z';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W.toFixed(1)} ${H.toFixed(1)}" width="${Math.round(W)}" height="${Math.round(H)}">
+  <rect width="${W.toFixed(1)}" height="${H.toFixed(1)}" fill="${theme.bg}"/>
+  <path d="${d}" stroke="${color}" stroke-width="${traceWidth}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'fourier-canvas.svg'; a.click();
+    URL.revokeObjectURL(url);
+  }, [mode, studioCoeffs, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
+
+  const exportPNG = useCallback(() => {
+    const aC = mode === 'studio' ? studioCoeffs : coeffs;
+    const aN = mode === 'studio' ? studioCoeffs.length : N;
+    if (!aC || !aC.length) return;
+    const steps = 2000;
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const tips = evalFourier(aC, i / steps, aN, phaseOffset);
+      pts.push(tips[tips.length - 1]);
+    }
+    const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+    const margin = 40;
+    const minX = Math.min(...xs) - margin, maxX = Math.max(...xs) + margin;
+    const minY = Math.min(...ys) - margin, maxY = Math.max(...ys) + margin;
+    const W = Math.ceil(maxX - minX), H = Math.ceil(maxY - minY);
+    const sc = 2;
+    const cv = document.createElement('canvas');
+    cv.width = W * sc; cv.height = H * sc;
+    const ctx = cv.getContext('2d');
+    ctx.scale(sc, sc);
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = traceColor || theme.trace;
+    ctx.lineWidth = traceWidth;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(p.x - minX, p.y - minY);
+      else ctx.lineTo(p.x - minX, p.y - minY);
+    });
+    ctx.closePath(); ctx.stroke();
+    cv.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'fourier-canvas.png'; a.click();
+      URL.revokeObjectURL(url);
+    });
+  }, [mode, studioCoeffs, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
+
+  // Expose keyboard shortcut targets
+  useEffect(() => {
+    window.__togglePlay = () => setPlaying((p) => !p);
+    window.__undo = undo;
+    window.__redo = redo;
+    return () => { window.__togglePlay = null; window.__undo = null; window.__redo = null; };
+  }, [undo, redo]);
 
   // Tweaks: postMessage bridge
   useEffect(() => {
@@ -1484,8 +1682,18 @@ function App() {
         {mode === 'studio' && (
           <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <SectionLabel theme={theme}>{tr.playback}</SectionLabel>
-            <Slider label="Speed" value={speed} min={0.02} max={1.5} step={0.01}
+            <Slider label={tr.speed} value={speed} min={0.02} max={1.5} step={0.01}
               theme={theme} onChange={setSpeed} format={(v) => `${v.toFixed(2)}×`} />
+            <Slider
+              label={tr.phaseOffset}
+              value={phaseOffset}
+              min={0}
+              max={6.2832}
+              step={0.01}
+              onChange={setPhaseOffset}
+              theme={theme}
+              format={(v) => `${(v / Math.PI).toFixed(2)}π`}
+            />
             <div style={{ display: 'flex', gap: 8 }}>
               <Button theme={theme} primary onClick={() => setPlaying((p) => !p)}>
                 {playing ? tr.pause : tr.play}
@@ -1535,11 +1743,25 @@ function App() {
             theme={theme}
             format={(v) => `${v.toFixed(2)}×`}
           />
+          <Slider
+            label={tr.phaseOffset}
+            value={phaseOffset}
+            min={0}
+            max={6.2832}
+            step={0.01}
+            onChange={setPhaseOffset}
+            theme={theme}
+            format={(v) => `${(v / Math.PI).toFixed(2)}π`}
+          />
           <div style={{ display: 'flex', gap: 8 }}>
             <Button theme={theme} primary onClick={() => setPlaying((p) => !p)}>
               {playing ? tr.pause : tr.play}
             </Button>
-            <Button theme={theme} onClick={() => onClear()}>{tr.clear}</Button>
+            <Button theme={theme} onClick={onClear}>{tr.clear}</Button>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button theme={theme} small onClick={undo}>{tr.undo}</Button>
+            <Button theme={theme} small onClick={redo}>{tr.redo}</Button>
           </div>
         </section>
         </>
@@ -1551,6 +1773,37 @@ function App() {
           <Toggle label={tr.epicyclesToggle} value={showCircles} onChange={setShowCircles} theme={theme} />
           <Toggle label={tr.vectors}         value={showVectors} onChange={setShowVectors} theme={theme} />
           <Toggle label={tr.sourcePath}      value={showUserPath} onChange={setShowUserPath} theme={theme} />
+        </section>
+
+        {/* Stroke */}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <SectionLabel theme={theme}>{tr.stroke}</SectionLabel>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 11, color: theme.muted, fontFamily: 'Inter, sans-serif', flex: 1 }}>
+              {tr.traceColor}
+            </span>
+            <input
+              type="color"
+              value={traceColor || theme.trace}
+              onChange={(e) => setTraceColor(e.target.value)}
+              style={{ width: 36, height: 28, border: `1px solid ${theme.line}`, borderRadius: 4, cursor: 'pointer', padding: 2, background: 'transparent' }}
+            />
+            <button
+              onClick={() => setTraceColor(null)}
+              title="Reset to theme default"
+              style={{ fontSize: 11, color: theme.muted, background: 'transparent', border: `1px solid ${theme.line}`, borderRadius: 4, padding: '4px 7px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
+            >↺</button>
+          </div>
+          <Slider
+            label={tr.traceWidth}
+            value={traceWidth}
+            min={0.5}
+            max={8}
+            step={0.5}
+            onChange={setTraceWidth}
+            theme={theme}
+            format={(v) => `${v}px`}
+          />
         </section>
 
         {/* Trail */}
@@ -1576,6 +1829,17 @@ function App() {
             ))}
           </div>
         </section>
+
+        {/* Export */}
+        {(activeCoeffs && activeCoeffs.length > 0) && (
+        <section>
+          <SectionLabel theme={theme}>{tr.export}</SectionLabel>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button theme={theme} onClick={exportSVG}>{tr.exportSVG} ↓</Button>
+            <Button theme={theme} onClick={exportPNG}>{tr.exportPNG} ↓</Button>
+          </div>
+        </section>
+        )}
 
         {/* Hint for mobile/desktop */}
         {mode === 'draw' && (
@@ -1679,6 +1943,9 @@ function App() {
           onDrawPoint={onDrawPoint}
           onDrawEnd={onDrawEnd}
           onTimeUpdate={(nt) => setT(nt)}
+          traceColor={traceColor}
+          traceWidth={traceWidth}
+          phaseOffset={phaseOffset}
         />
 
         {/* Math readout */}
@@ -1832,6 +2099,14 @@ document.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
     e.preventDefault();
     window.__togglePlay && window.__togglePlay();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) {
+    e.preventDefault();
+    window.__undo && window.__undo();
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyY' || (e.code === 'KeyZ' && e.shiftKey))) {
+    e.preventDefault();
+    window.__redo && window.__redo();
   }
 });
 
