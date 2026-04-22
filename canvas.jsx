@@ -4,7 +4,7 @@ function FourierCanvas({
   theme, coeffs, userPath, pathResampled,
   N, speed, playing, showCircles, showVectors, showUserPath, trailMode,
   onDrawStart, onDrawPoint, onDrawEnd, canDraw,
-  onTimeUpdate,
+  onTimeUpdate, zoom = 1, onZoomChange,
 }) {
   const canvasRef = React.useRef(null);
   const overlayRef = React.useRef(null);
@@ -74,13 +74,14 @@ function FourierCanvas({
     ctx.font = '10px "JetBrains Mono", monospace';
     ctx.fillText('0', dims.w / 2 + 4, dims.h / 2 - 4);
 
-    // user path (centered at canvas center)
+    // user path (centered at canvas center, scaled with zoom)
     if (showUserPath && userPath && userPath.length > 1) {
       ctx.save();
       ctx.translate(dims.w / 2, dims.h / 2);
+      ctx.scale(zoom, zoom);
       ctx.strokeStyle = theme.user;
-      ctx.lineWidth = 1.2;
-      ctx.setLineDash([3, 4]);
+      ctx.lineWidth = 1.2 / zoom;
+      ctx.setLineDash([3 / zoom, 4 / zoom]);
       ctx.beginPath();
       ctx.moveTo(userPath[0].x, userPath[0].y);
       for (let i = 1; i < userPath.length; i++) {
@@ -90,7 +91,7 @@ function FourierCanvas({
       ctx.setLineDash([]);
       ctx.restore();
     }
-  }, [dims, theme, userPath, showUserPath]);
+  }, [dims, theme, userPath, showUserPath, zoom]);
 
   // Animation loop
   React.useEffect(() => {
@@ -143,6 +144,7 @@ function FourierCanvas({
       ctx.clearRect(0, 0, dims.w, dims.h);
       ctx.save();
       ctx.translate(dims.w / 2, dims.h / 2);
+      ctx.scale(zoom, zoom);
 
       // Trace
       const trace = tracePtsRef.current;
@@ -218,16 +220,28 @@ function FourierCanvas({
       cancelAnimationFrame(rafRef.current);
       lastTsRef.current = 0;
     };
-  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode]);
+  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, zoom]);
 
   // Mouse/touch drawing
+  // Scroll-wheel zoom
+  React.useEffect(() => {
+    const el = canvasRef.current;
+    if (!el || !onZoomChange) return;
+    const onWheel = (e) => {
+      e.preventDefault();
+      onZoomChange(e.deltaY < 0 ? 1.1 : 1 / 1.1);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [onZoomChange]);
+
   const getLocalPt = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return {
-      x: clientX - rect.left - dims.w / 2,
-      y: clientY - rect.top - dims.h / 2,
+      x: (clientX - rect.left - dims.w / 2) / zoom,
+      y: (clientY - rect.top - dims.h / 2) / zoom,
     };
   };
 
