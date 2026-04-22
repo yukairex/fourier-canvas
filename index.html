@@ -357,6 +357,11 @@ const I18N = {
     export: 'Export',
     exportSVG: 'SVG',
     exportPNG: 'PNG',
+    share: 'Share',
+    copied: 'Copied!',
+    record: 'Record',
+    recording: 'Recording…',
+    scrubber: 'Scrubber',
   },
 
   zh: {
@@ -416,6 +421,10 @@ const I18N = {
     export: '导出',
     exportSVG: 'SVG',
     exportPNG: 'PNG',
+    share: '分享',
+    copied: '已复制！',
+    record: '录制',
+    recording: '录制中…',
   },
 
   ja: {
@@ -475,6 +484,10 @@ const I18N = {
     export: 'エクスポート',
     exportSVG: 'SVG',
     exportPNG: 'PNG',
+    share: '共有',
+    copied: 'コピー完了！',
+    record: '録画',
+    recording: '録画中…',
   },
 
   fr: {
@@ -534,6 +547,10 @@ const I18N = {
     export: 'Exporter',
     exportSVG: 'SVG',
     exportPNG: 'PNG',
+    share: 'Partager',
+    copied: 'Copié !',
+    record: 'Enregistrer',
+    recording: 'Enregistrement…',
   },
 
   es: {
@@ -593,6 +610,10 @@ const I18N = {
     export: 'Exportar',
     exportSVG: 'SVG',
     exportPNG: 'PNG',
+    share: 'Compartir',
+    copied: '¡Copiado!',
+    record: 'Grabar',
+    recording: 'Grabando…',
   },
 };
 
@@ -961,6 +982,7 @@ function FourierCanvas({
   onDrawStart, onDrawPoint, onDrawEnd, canDraw,
   onTimeUpdate,
   traceColor, traceWidth, phaseOffset,
+  seekRef, canvasRefOut, isRecording,
 }) {
   const canvasRef = React.useRef(null);
   const overlayRef = React.useRef(null);
@@ -991,6 +1013,15 @@ function FourierCanvas({
     setDims({ w: Math.floor(r.width), h: Math.floor(r.height) });
     return () => ro.disconnect();
   }, []);
+
+  // Expose canvas + seek control to parent
+  React.useEffect(() => {
+    if (canvasRefOut) canvasRefOut.current = canvasRef.current;
+    if (seekRef) seekRef.current = (newT) => {
+      tRef.current = newT;
+      tracePtsRef.current = [];
+    };
+  });
 
   // Clear trace when coeffs change
   React.useEffect(() => {
@@ -1037,39 +1068,9 @@ function FourierCanvas({
     return () => el.removeEventListener('wheel', onWheel);
   }, [dims]);
 
-  // Pinch-to-zoom
-  React.useEffect(() => {
-    const el = canvasRef.current;
-    if (!el) return;
-    let lastDist = null;
-    let lastMidX = null, lastMidY = null;
-    const onTouchMove = (e) => {
-      if (e.touches.length === 2) {
-        const t0 = e.touches[0], t1 = e.touches[1];
-        const rect = el.getBoundingClientRect();
-        const dist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
-        const midX = (t0.clientX + t1.clientX) / 2 - rect.left;
-        const midY = (t0.clientY + t1.clientY) / 2 - rect.top;
-        if (lastDist !== null) {
-          zoomBy(dist / lastDist, midX, midY);
-          // pan by mid movement
-          const dx = midX - lastMidX, dy = midY - lastMidY;
-          const v = viewRef.current;
-          const next = { ...v, ox: v.ox + dx, oy: v.oy + dy };
-          viewRef.current = next;
-          setViewState({ ...next });
-        }
-        lastDist = dist; lastMidX = midX; lastMidY = midY;
-      }
-    };
-    const onTouchEnd = () => { lastDist = null; };
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd);
-    return () => {
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [dims]);
+  // activePointers: tracks all current pointer positions for pinch-to-zoom
+  const activePointersRef = React.useRef(new Map());
+  const lastPinchRef = React.useRef(null);
 
   // Overlay: grid + user path (redraws on view change)
   React.useEffect(() => {
@@ -1116,19 +1117,33 @@ function FourierCanvas({
     ctx.font = '10px "JetBrains Mono", monospace';
     ctx.fillText('0', cx + 4, cy - 4);
 
-    // User path
+    // User path (pressure-sensitive when stylus data is available)
     if (showUserPath && userPath && userPath.length > 1) {
       ctx.save();
       ctx.translate(cx, cy);
       ctx.scale(scale, scale);
       ctx.strokeStyle = theme.user;
-      ctx.lineWidth = 1.2 / scale;
-      ctx.setLineDash([3 / scale, 4 / scale]);
-      ctx.beginPath();
-      ctx.moveTo(userPath[0].x, userPath[0].y);
-      for (let i = 1; i < userPath.length; i++) ctx.lineTo(userPath[i].x, userPath[i].y);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      const hasPressure = userPath.some((p) => p.pressure !== undefined && p.pressure !== 1);
+      if (hasPressure) {
+        ctx.setLineDash([]);
+        for (let i = 1; i < userPath.length; i++) {
+          const pw = Math.max(0.5, (userPath[i].pressure || 1) * 3);
+          ctx.lineWidth = pw / scale;
+          ctx.beginPath();
+          ctx.moveTo(userPath[i - 1].x, userPath[i - 1].y);
+          ctx.lineTo(userPath[i].x, userPath[i].y);
+          ctx.stroke();
+        }
+      } else {
+        ctx.lineWidth = 1.2 / scale;
+        ctx.setLineDash([3 / scale, 4 / scale]);
+        ctx.beginPath();
+        ctx.moveTo(userPath[0].x, userPath[0].y);
+        for (let i = 1; i < userPath.length; i++) ctx.lineTo(userPath[i].x, userPath[i].y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
       ctx.restore();
     }
   }, [dims, theme, userPath, showUserPath, viewState]);
@@ -1165,7 +1180,12 @@ function FourierCanvas({
       for (const p of tracePtsRef.current) p.age += dt;
       if (maxAge !== Infinity) tracePtsRef.current = tracePtsRef.current.filter((p) => p.age < maxAge);
 
-      ctx.clearRect(0, 0, dims.w, dims.h);
+      if (isRecording) {
+        ctx.fillStyle = theme.bg;
+        ctx.fillRect(0, 0, dims.w, dims.h);
+      } else {
+        ctx.clearRect(0, 0, dims.w, dims.h);
+      }
 
       const { scale, ox, oy } = viewRef.current;
       const originX = dims.w / 2 + ox;
@@ -1242,54 +1262,84 @@ function FourierCanvas({
 
     rafRef.current = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(rafRef.current); lastTsRef.current = 0; };
-  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset]);
+  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording]);
 
-  // Pointer events: pan (right-click or when !canDraw) vs draw (left click when canDraw)
-  const getCanvasPt = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { cx: clientX - rect.left, cy: clientY - rect.top };
-  };
-  const canvasToWorld = (cx, cy) => {
+  // Unified pointer events: mouse, touch, stylus — with pressure support and pinch-to-zoom
+  const canvasToWorld = (cx, cy, pressure = 1) => {
     const { scale, ox, oy } = viewRef.current;
     return {
       x: (cx - dims.w / 2 - ox) / scale,
       y: (cy - dims.h / 2 - oy) / scale,
+      pressure,
     };
   };
 
-  const handleDown = (e) => {
-    const isTouch = !!e.touches;
-    if (isTouch && e.touches.length > 1) return; // pinch handled separately
+  const getPinchState = () => {
+    const pts = [...activePointersRef.current.values()];
+    if (pts.length < 2) return null;
+    const [a, b] = pts;
+    return { dist: Math.hypot(a.x - b.x, a.y - b.y), midX: (a.x + b.x) / 2, midY: (a.y + b.y) / 2 };
+  };
+
+  const handlePointerDown = (e) => {
     e.preventDefault();
-    const { cx, cy } = getCanvasPt(e);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const rect = canvasRef.current.getBoundingClientRect();
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    activePointersRef.current.set(e.pointerId, { x: cx, y: cy });
+
+    if (activePointersRef.current.size === 2) {
+      panRef.current = null;
+      if (drawingRef.current) { drawingRef.current = false; onDrawEnd(); }
+      lastPinchRef.current = getPinchState();
+      return;
+    }
+
     const isPan = e.button === 1 || e.button === 2 || !canDraw;
     if (isPan) {
       panRef.current = { startX: cx, startY: cy, startOx: viewRef.current.ox, startOy: viewRef.current.oy };
     } else {
       drawingRef.current = true;
-      const wp = canvasToWorld(cx, cy);
-      onDrawStart(wp);
+      onDrawStart(canvasToWorld(cx, cy, e.pressure || 1));
     }
   };
-  const handleMove = (e) => {
-    if (e.touches && e.touches.length > 1) return;
+
+  const handlePointerMove = (e) => {
     e.preventDefault();
-    const { cx, cy } = getCanvasPt(e);
+    const rect = canvasRef.current.getBoundingClientRect();
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    activePointersRef.current.set(e.pointerId, { x: cx, y: cy });
+
+    if (activePointersRef.current.size >= 2) {
+      const pinch = getPinchState();
+      if (lastPinchRef.current) {
+        zoomBy(pinch.dist / lastPinchRef.current.dist, pinch.midX, pinch.midY);
+        const dx = pinch.midX - lastPinchRef.current.midX, dy = pinch.midY - lastPinchRef.current.midY;
+        const v = viewRef.current;
+        const next = { ...v, ox: v.ox + dx, oy: v.oy + dy };
+        viewRef.current = next; setViewState({ ...next });
+      }
+      lastPinchRef.current = pinch;
+      return;
+    }
+
     if (panRef.current) {
       const dx = cx - panRef.current.startX, dy = cy - panRef.current.startY;
       const next = { ...viewRef.current, ox: panRef.current.startOx + dx, oy: panRef.current.startOy + dy };
-      viewRef.current = next;
-      setViewState({ ...next });
+      viewRef.current = next; setViewState({ ...next });
     } else if (drawingRef.current) {
-      onDrawPoint(canvasToWorld(cx, cy));
+      onDrawPoint(canvasToWorld(cx, cy, e.pressure || 1));
     }
   };
-  const handleUp = (e) => {
-    e.preventDefault && e.preventDefault();
-    if (panRef.current) { panRef.current = null; return; }
-    if (drawingRef.current) { drawingRef.current = false; onDrawEnd(); }
+
+  const handlePointerUp = (e) => {
+    e.preventDefault();
+    activePointersRef.current.delete(e.pointerId);
+    if (activePointersRef.current.size < 2) lastPinchRef.current = null;
+    if (activePointersRef.current.size === 0) {
+      if (panRef.current) { panRef.current = null; return; }
+      if (drawingRef.current) { drawingRef.current = false; onDrawEnd(); }
+    }
   };
 
   const cursor = panRef.current ? 'grabbing' : (!canDraw ? 'grab' : 'crosshair');
@@ -1299,14 +1349,12 @@ function FourierCanvas({
       <canvas ref={overlayRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
       <canvas
         ref={canvasRef}
-        onMouseDown={handleDown}
-        onMouseMove={handleMove}
-        onMouseUp={handleUp}
-        onMouseLeave={handleUp}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onContextMenu={(e) => e.preventDefault()}
-        onTouchStart={handleDown}
-        onTouchMove={handleMove}
-        onTouchEnd={handleUp}
         style={{ position: 'absolute', inset: 0, cursor, touchAction: 'none' }}
       />
       {/* Zoom controls */}
@@ -1358,6 +1406,33 @@ Object.assign(window, { FourierCanvas });
 // Main App: layout, state, tweaks bridge.
 
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+// URL state encode/decode (feature 7)
+function encodeURLState({ preset, coeffs, N, speed, phaseOffset, traceColor, traceWidth, themeKey, mode, vectors }) {
+  const o = { v: 1 };
+  if (preset) {
+    o.p = preset;
+  } else if (coeffs && coeffs.length) {
+    o.c = coeffs.slice(0, 60).map((c) => [c.freq, +c.amp.toFixed(2), +c.phase.toFixed(4)]);
+  }
+  if (N !== 60) o.n = N;
+  if (Math.abs(speed - 0.25) > 0.001) o.s = +speed.toFixed(3);
+  if (phaseOffset) o.po = +phaseOffset.toFixed(4);
+  if (traceColor) o.tc = traceColor;
+  if (Math.abs(traceWidth - 2.2) > 0.1) o.tw = traceWidth;
+  if (themeKey !== 'paper') o.th = themeKey;
+  if (mode === 'studio') {
+    o.m = 's';
+    if (vectors) o.vec = vectors.map((v) => [v.freq, +v.amp.toFixed(2), +v.phase.toFixed(4)]);
+  }
+  return btoa(JSON.stringify(o));
+}
+
+function decodeURLState(hash) {
+  try {
+    return JSON.parse(atob(hash.replace(/^#s=/, '')));
+  } catch { return null; }
+}
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "paper",
@@ -1416,6 +1491,17 @@ function App() {
   // phase offset
   const [phaseOffset, setPhaseOffset] = useState(0);
 
+  // recording
+  const [recording, setRecording] = useState(false);
+  const recordCanvasRef = useRef(null);
+
+  // share URL
+  const [copied, setCopied] = useState(false);
+
+  // scrubber
+  const seekRef = useRef(null);
+  const wasPlayingRef = useRef(false);
+
   // When a preset is chosen, compute coefficients.
   const applyPath = useCallback((points, presetKey = null) => {
     if (!points || points.length < 4) return;
@@ -1434,9 +1520,40 @@ function App() {
     histIdxRef.current = h.length - 1;
   }, []);
 
-  // Load default preset on mount
+  const restoreFromURLState = useCallback((decoded) => {
+    if (!decoded) return false;
+    if (decoded.p && PRESETS[decoded.p]) {
+      setActivePreset(decoded.p);
+      applyPath(PRESETS[decoded.p].fn(), decoded.p);
+    } else if (decoded.c) {
+      const rc = decoded.c.map(([freq, amp, phase]) => ({ freq, amp, phase, re: amp * Math.cos(phase), im: amp * Math.sin(phase) }));
+      setCoeffs(rc);
+      setPlaying(true);
+      const h = historyRef.current.slice(0, histIdxRef.current + 1);
+      h.push({ userPath: null, coeffs: rc, preset: null });
+      historyRef.current = h; histIdxRef.current = h.length - 1;
+    }
+    if (decoded.n !== undefined) setN(decoded.n);
+    if (decoded.s !== undefined) setSpeed(decoded.s);
+    if (decoded.po) setPhaseOffset(decoded.po);
+    if (decoded.tc) setTraceColor(decoded.tc);
+    if (decoded.tw !== undefined) setTraceWidth(decoded.tw);
+    if (decoded.th) setThemeKey(decoded.th);
+    if (decoded.m === 's') {
+      setMode('studio');
+      if (decoded.vec) setVectors(decoded.vec.map((v, i) => ({ id: i + 1, freq: v[0], amp: v[1], phase: v[2] })));
+    }
+    return true;
+  }, [applyPath]);
+
+  // Load default preset on mount (or restore from URL hash)
   useEffect(() => {
-    if (PRESETS[activePreset]) applyPath(PRESETS[activePreset].fn());
+    const hash = window.location.hash;
+    if (hash.startsWith('#s=')) {
+      const decoded = decodeURLState(hash);
+      if (decoded && restoreFromURLState(decoded)) return;
+    }
+    applyPath(PRESETS.heart.fn(), 'heart');
     // eslint-disable-next-line
   }, []);
 
@@ -1495,6 +1612,44 @@ function App() {
     setUserPath(snap.userPath);
     setCoeffs(snap.coeffs);
     setActivePreset(snap.preset);
+  }, []);
+
+  const copyShareURL = useCallback(() => {
+    const aC = mode === 'studio' ? studioCoeffs : coeffs;
+    const encoded = encodeURLState({ preset: activePreset, coeffs: aC, N, speed, phaseOffset, traceColor, traceWidth, themeKey, mode, vectors });
+    const url = window.location.href.split('#')[0] + '#s=' + encoded;
+    window.history.replaceState(null, '', '#s=' + encoded);
+    navigator.clipboard.writeText(url).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [mode, studioCoeffs, coeffs, activePreset, N, speed, phaseOffset, traceColor, traceWidth, themeKey, vectors]);
+
+  const startRecording = useCallback(() => {
+    const canvas = recordCanvasRef.current;
+    if (!canvas || recording) return;
+    const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
+    if (!mimeType) { alert('Recording not supported in this browser.'); return; }
+    const stream = canvas.captureStream(30);
+    const recorder = new MediaRecorder(stream, { mimeType });
+    const chunks = [];
+    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'fourier-canvas.webm'; a.click();
+      URL.revokeObjectURL(url);
+      setRecording(false);
+    };
+    recorder.start(100);
+    setRecording(true);
+    const duration = Math.max(1500, (1 / speed) * 1000 + 300);
+    setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, duration);
+  }, [recording, speed]);
+
+  const scrubberSeek = useCallback((newT) => {
+    seekRef.current?.(newT);
+    setT(newT);
   }, []);
 
   const exportSVG = useCallback(() => {
@@ -1834,9 +1989,11 @@ function App() {
         {(activeCoeffs && activeCoeffs.length > 0) && (
         <section>
           <SectionLabel theme={theme}>{tr.export}</SectionLabel>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Button theme={theme} onClick={exportSVG}>{tr.exportSVG} ↓</Button>
             <Button theme={theme} onClick={exportPNG}>{tr.exportPNG} ↓</Button>
+            <Button theme={theme} onClick={startRecording}>{recording ? tr.recording : tr.record}</Button>
+            <Button theme={theme} primary onClick={copyShareURL}>{copied ? tr.copied : tr.share}</Button>
           </div>
         </section>
         )}
@@ -1946,6 +2103,9 @@ function App() {
           traceColor={traceColor}
           traceWidth={traceWidth}
           phaseOffset={phaseOffset}
+          seekRef={seekRef}
+          canvasRefOut={recordCanvasRef}
+          isRecording={recording}
         />
 
         {/* Math readout */}
@@ -2019,6 +2179,48 @@ function App() {
               color: theme.muted, cursor: 'pointer', fontFamily: 'JetBrains Mono, monospace',
             }}
           >{tr.showMath}</button>
+        )}
+
+        {/* Recording indicator */}
+        {recording && (
+          <div style={{
+            position: 'absolute', top: 60, right: 20, zIndex: 5,
+            background: theme.panel, border: `1px solid ${theme.line}`, borderRadius: 8,
+            padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8,
+            fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: theme.ink,
+            boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+          }}>
+            <span style={{ width: 8, height: 8, borderRadius: 99, background: '#e53e3e', display: 'inline-block' }} />
+            {tr.recording}
+          </div>
+        )}
+
+        {/* Playback scrubber */}
+        {activeCoeffs && activeCoeffs.length > 0 && (
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2,
+            padding: '4px 16px 8px',
+            background: `linear-gradient(to top, ${theme.panel}cc 0%, transparent 100%)`,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: theme.muted, minWidth: 28, textAlign: 'right' }}>
+              {Math.round(t * 100)}%
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={999}
+              step={1}
+              value={Math.round(t * 999)}
+              onChange={(e) => scrubberSeek(parseInt(e.target.value) / 999)}
+              onPointerDown={() => { wasPlayingRef.current = playing; setPlaying(false); }}
+              onPointerUp={() => { if (wasPlayingRef.current) setPlaying(true); }}
+              style={{ flex: 1, accentColor: theme.accent, height: 3, cursor: 'pointer' }}
+            />
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 9, color: theme.muted, minWidth: 28 }}>
+              100%
+            </span>
+          </div>
         )}
 
         {/* Empty state hint */}
