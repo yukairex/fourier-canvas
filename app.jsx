@@ -25,12 +25,6 @@ function App() {
 
   // mode: 'draw' or 'studio'
   const [mode, setMode] = useState('draw');
-
-  // canvas zoom
-  const [zoom, setZoom] = useState(1);
-  const handleZoom = useCallback((factor) => {
-    setZoom((z) => parseFloat(Math.min(4, Math.max(0.25, z * factor)).toFixed(3)));
-  }, []);
   const [vectors, setVectors] = useState(() => genDefaultVectors());
   const studioCoeffs = useMemo(() => vectorsToCoeffs(vectors), [vectors]);
 
@@ -148,7 +142,6 @@ function App() {
   const activePath = isDrawing && rawDrawing.length > 1 ? rawDrawing : userPath;
 
   return (
-    <React.Fragment>
     <div style={{
       position: 'fixed', inset: 0,
       background: theme.bg,
@@ -164,25 +157,51 @@ function App() {
         background: theme.panel,
         display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
+        minWidth: 0,
       }}>
-        {/* Wordmark */}
-        <div style={{ padding: '20px 20px 16px', flexShrink: 0 }}>
+        {/* Sticky header: wordmark + mode toggle — always visible */}
+        <div style={{
+          padding: '16px 20px 14px',
+          flexShrink: 0,
+          borderBottom: `1px solid ${theme.line}`,
+          background: theme.panel,
+        }}>
           <div style={{
             fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 10, letterSpacing: 3, color: theme.muted,
-            textTransform: 'uppercase',
+            fontSize: 9, letterSpacing: 3, color: theme.muted,
+            textTransform: 'uppercase', marginBottom: 4,
           }}>Fourier Canvas</div>
           <div style={{
             fontFamily: 'Newsreader, ui-serif, Georgia, serif',
-            fontSize: 22, lineHeight: 1.15, marginTop: 3,
-            fontWeight: 400, letterSpacing: -0.4,
+            fontSize: 20, lineHeight: 1.2,
+            fontWeight: 400, letterSpacing: -0.4, marginBottom: 14,
           }}>
-            <em style={{ fontStyle: 'italic' }}>f</em>(t) = <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 17 }}>Σ cₙ e<sup style={{ fontSize: 10 }}>i2πnt</sup></span>
+            <em style={{ fontStyle: 'italic' }}>f</em>(t) = <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 16 }}>Σ cₙ e<sup style={{ fontSize: 9 }}>i2πnt</sup></span>
+          </div>
+          {/* Mode toggle */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            border: `1px solid ${theme.line}`, borderRadius: 8, overflow: 'hidden',
+          }}>
+            {[['draw', tr.draw], ['studio', tr.studio]].map(([k, label]) => (
+              <button key={k} onClick={() => setMode(k)}
+                style={{
+                  padding: '9px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif',
+                  fontWeight: 600, letterSpacing: 0.4, cursor: 'pointer',
+                  background: mode === k ? theme.ink : 'transparent',
+                  color: mode === k ? theme.panel : theme.muted,
+                  border: 'none', transition: 'all 120ms',
+                }}>{label}</button>
+            ))}
           </div>
         </div>
 
         {/* Scrollable content */}
-        <div style={{ overflowY: 'auto', flex: 1, padding: '0 20px 22px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{
+          overflowY: 'auto', flex: 1,
+          padding: '18px 20px 24px',
+          display: 'flex', flexDirection: 'column', gap: 20,
+        }}>
         {/* Description */}
         <div style={{ fontSize: 12, color: theme.muted, lineHeight: 1.5 }}>
           {mode === 'draw' ? tr.tagline : tr.taglineStudio}
@@ -390,8 +409,6 @@ function App() {
           onDrawPoint={onDrawPoint}
           onDrawEnd={onDrawEnd}
           onTimeUpdate={(nt) => setT(nt)}
-          zoom={zoom}
-          onZoomChange={handleZoom}
         />
 
         {/* Math readout */}
@@ -488,37 +505,6 @@ function App() {
           </div>
         )}
 
-        {/* Zoom controls */}
-        <div style={{
-          position: 'absolute', bottom: editMode ? 320 : 18, right: 20, zIndex: 3,
-          display: 'flex', alignItems: 'center', gap: 2,
-          background: theme.panel, border: `1px solid ${theme.line}`,
-          borderRadius: 99, padding: '3px 4px',
-          transition: 'bottom 150ms ease',
-          boxShadow: themeKey === 'graphite' ? '0 2px 10px rgba(0,0,0,0.4)' : '0 2px 10px rgba(0,0,0,0.08)',
-        }}>
-          {[['−', 1 / 1.25], ['+', 1.25]].map(([label, factor]) => (
-            <button key={label} onClick={() => handleZoom(factor)} style={{
-              width: 26, height: 26, borderRadius: 99,
-              background: 'transparent', border: 'none',
-              color: theme.ink, fontSize: 16, lineHeight: 1,
-              cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 300,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>{label}</button>
-          ))}
-          <span style={{
-            fontFamily: 'JetBrains Mono, monospace', fontSize: 10,
-            color: theme.muted, minWidth: 34, textAlign: 'center', userSelect: 'none',
-          }}>{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom(1)} style={{
-            width: 26, height: 26, borderRadius: 99,
-            background: zoom === 1 ? 'transparent' : theme.line, border: 'none',
-            color: theme.muted, fontSize: 9, letterSpacing: 0.5,
-            fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>1×</button>
-        </div>
-
         {/* Edit-mode badge (Tweaks) */}
         {editMode && (
           <div style={{
@@ -556,36 +542,7 @@ function App() {
           </div>
         )}
       </main>
-
-    </div>,
-    ReactDOM.createPortal(
-      <div style={{
-        position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-        zIndex: 9999,
-        display: 'flex',
-        background: theme.panel,
-        border: `1px solid ${theme.line}`,
-        borderRadius: 10,
-        overflow: 'hidden',
-        boxShadow: themeKey === 'graphite'
-          ? '0 4px 20px rgba(0,0,0,0.5)'
-          : '0 4px 20px rgba(0,0,0,0.12)',
-      }}>
-        {[['draw', tr.draw], ['studio', tr.studio]].map(([k, label]) => (
-          <button key={k} onClick={() => setMode(k)}
-            style={{
-              padding: '10px 22px', fontSize: 12, fontFamily: 'Inter, sans-serif',
-              fontWeight: 600, letterSpacing: 0.4, cursor: 'pointer',
-              background: mode === k ? theme.ink : 'transparent',
-              color: mode === k ? theme.panel : theme.muted,
-              border: 'none',
-              transition: 'all 120ms',
-            }}>{label}</button>
-        ))}
-      </div>,
-      document.body
-    )
-    </React.Fragment>
+    </div>
   );
 }
 
