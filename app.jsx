@@ -47,6 +47,8 @@ function App() {
   const [activePreset, setActivePreset] = useState('heart');
   const [t, setT] = useState(0);
   const [editMode, setEditMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 700);
+  const [mobilePanel, setMobilePanel] = useState(false);
 
   // When a preset is chosen, compute coefficients.
   const applyPath = useCallback((points) => {
@@ -116,6 +118,12 @@ function App() {
     return () => window.removeEventListener('message', handler);
   }, []);
 
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 700);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
+
   const setTweak = (key, value) => {
     window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: value } }, '*');
   };
@@ -140,6 +148,163 @@ function App() {
 
   // Inline live-drawing render inside canvas (via extra prop)
   const activePath = isDrawing && rawDrawing.length > 1 ? rawDrawing : userPath;
+
+  // ── Mobile layout (iPhone / narrow screens) ──────────────────────────────
+  if (isMobile) return (
+    <div className="app-root" style={{
+      background: theme.bg, color: theme.ink,
+      fontFamily: 'Inter,-apple-system,sans-serif',
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        flexShrink: 0, display: 'flex', alignItems: 'center',
+        padding: '0 12px', gap: 8,
+        height: 'calc(48px + env(safe-area-inset-top))',
+        paddingTop: 'env(safe-area-inset-top)',
+        borderBottom: `1px solid ${theme.line}`, background: theme.panel,
+      }}>
+        <span style={{
+          fontFamily: 'JetBrains Mono,monospace', fontSize: 8,
+          letterSpacing: 2.5, color: theme.muted, textTransform: 'uppercase', flexShrink: 0,
+        }}>Fourier Canvas</span>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', border: `1px solid ${theme.line}`, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+          {[['draw', tr.draw], ['studio', tr.studio]].map(([k, label]) => (
+            <button key={k} onClick={() => setMode(k)} style={{
+              padding: '6px 10px', fontSize: 11, fontFamily: 'Inter,sans-serif',
+              fontWeight: 600, cursor: 'pointer',
+              background: mode === k ? theme.ink : 'transparent',
+              color: mode === k ? theme.panel : theme.muted, border: 'none',
+            }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+          {Object.keys(I18N).map(l => (
+            <button key={l} onClick={() => changeLang(l)} style={{
+              padding: '3px 6px', borderRadius: 5,
+              border: lang === l ? `1.5px solid ${theme.ink}` : '1px solid transparent',
+              background: lang === l ? theme.ink : 'transparent',
+              color: lang === l ? theme.panel : theme.muted,
+              fontSize: 9, fontFamily: 'JetBrains Mono,monospace', fontWeight: 600, cursor: 'pointer',
+            }}>{I18N[l].langLabel}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Canvas */}
+      <main style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
+        <div style={{
+          position: 'absolute', top: 8, left: 8, zIndex: 2,
+          fontFamily: 'JetBrains Mono,monospace', fontSize: 9, letterSpacing: 1,
+          color: theme.muted, pointerEvents: 'none',
+          background: `${theme.panel}cc`, borderRadius: 4, padding: '2px 6px',
+        }}>
+          {mode === 'studio'
+            ? tr.vectorCount(vectors.length)
+            : (coeffs ? `${N}/${coeffs.length} ${tr.harmonics}` : tr.ready)}
+          {'  '}t={t.toFixed(2)}
+        </div>
+        <FourierCanvas
+          theme={theme} coeffs={activeCoeffs}
+          userPath={mode === 'studio' ? null : activePath}
+          pathResampled={pathResampled}
+          N={activeN} speed={speed}
+          playing={playing && !isDrawing}
+          showCircles={showCircles} showVectors={showVectors}
+          showUserPath={showUserPath && mode !== 'studio'}
+          trailMode={trailMode} canDraw={mode === 'draw'}
+          onDrawStart={onDrawStart} onDrawPoint={onDrawPoint} onDrawEnd={onDrawEnd}
+          onTimeUpdate={nt => setT(nt)}
+        />
+        {!coeffs && !isDrawing && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+            <div style={{ color: theme.muted, textAlign: 'center', fontFamily: 'Newsreader,Georgia,serif', fontSize: 18, fontStyle: 'italic' }}>
+              {tr.drawHint}
+              <div style={{ fontSize: 10, fontStyle: 'normal', letterSpacing: 1.5, marginTop: 6, fontFamily: 'JetBrains Mono,monospace', textTransform: 'uppercase' }}>{tr.drawHintSub}</div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Bottom panel */}
+      <div style={{
+        flexShrink: 0, borderTop: `1px solid ${theme.line}`, background: theme.panel,
+        paddingBottom: 'max(10px,env(safe-area-inset-bottom))',
+      }}>
+        {/* Controls row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px 6px' }}>
+          <button onClick={() => setPlaying(p => !p)} style={{
+            flexShrink: 0, padding: '7px 16px', borderRadius: 6, fontSize: 12,
+            fontWeight: 600, fontFamily: 'Inter,sans-serif',
+            background: theme.ink, color: theme.panel, border: 'none', cursor: 'pointer',
+          }}>{playing ? tr.pause : tr.play}</button>
+          <button onClick={onClear} style={{
+            flexShrink: 0, padding: '7px 10px', borderRadius: 6, fontSize: 11,
+            background: 'transparent', color: theme.muted,
+            border: `1px solid ${theme.line}`, cursor: 'pointer', fontFamily: 'Inter,sans-serif',
+          }}>{tr.clear}</button>
+          <div style={{ flex: 1 }} />
+          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+            {Object.entries(THEMES).map(([k, v]) => (
+              <button key={k} onClick={() => { setThemeKey(k); setTweak('theme', k); }} style={{
+                width: 22, height: 22, borderRadius: 99,
+                border: themeKey === k ? `2px solid ${theme.ink}` : `1px solid ${theme.line}`,
+                background: v.bg, cursor: 'pointer', position: 'relative',
+              }}><span style={{ position: 'absolute', inset: 3, borderRadius: 99, background: v.accent }} /></button>
+            ))}
+          </div>
+          <button onClick={() => setMobilePanel(p => !p)} style={{
+            width: 30, height: 30, borderRadius: 6, fontSize: 14,
+            background: 'transparent', color: theme.muted,
+            border: `1px solid ${theme.line}`, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>{mobilePanel ? '▾' : '▴'}</button>
+        </div>
+        {/* Preset chips */}
+        {mode === 'draw' && (
+          <div style={{
+            display: 'flex', gap: 6, overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+            padding: '0 12px 8px',
+          }}>
+            {Object.entries(PRESETS).map(([key, p]) => (
+              <PresetChip key={key} label={p.label} active={activePreset === key}
+                theme={theme} onClick={() => selectPreset(key)} />
+            ))}
+          </div>
+        )}
+        {/* Expanded controls */}
+        {mobilePanel && (
+          <div style={{ padding: '4px 12px 4px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {mode === 'studio' && <VectorStudio vectors={vectors} setVectors={setVectors} theme={theme} tr={tr} />}
+            {mode === 'draw' && <>
+              <Slider label={tr.epicycles} value={N} min={1} max={maxN} step={1} onChange={setN} theme={theme} format={v => `${v}`} />
+              <Slider label={tr.speed} value={speed} min={0.02} max={1.5} step={0.01} onChange={setSpeed} theme={theme} format={v => `${v.toFixed(2)}×`} />
+            </>}
+            {mode === 'studio' && <Slider label="Speed" value={speed} min={0.02} max={1.5} step={0.01} onChange={setSpeed} theme={theme} format={v => `${v.toFixed(2)}×`} />}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <Toggle label={tr.epicyclesToggle} value={showCircles} onChange={setShowCircles} theme={theme} />
+              <Toggle label={tr.vectors} value={showVectors} onChange={setShowVectors} theme={theme} />
+              <Toggle label={tr.sourcePath} value={showUserPath} onChange={setShowUserPath} theme={theme} />
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[['short', tr.short], ['long', tr.long], ['infinite', tr.infinite]].map(([m, label]) => (
+                <button key={m} onClick={() => setTrailMode(m)} style={{
+                  flex: 1, padding: '6px 0', fontSize: 10,
+                  background: trailMode === m ? theme.ink : 'transparent',
+                  color: trailMode === m ? theme.panel : theme.ink,
+                  border: `1px solid ${theme.line}`, borderRadius: 6,
+                  fontFamily: 'Inter,sans-serif', fontWeight: 500, cursor: 'pointer',
+                }}>{label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  // ── Desktop layout ────────────────────────────────────────────────────────
 
   return (
     <div style={{
