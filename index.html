@@ -48,31 +48,36 @@
 // Fourier math + path utilities
 // DFT: take N complex samples of a path, return N {freq, amp, phase} descriptors
 
-function dft(samples) {
+// Unsorted DFT: out[k] is the coefficient for bin k (signed freq). Uses a
+// twiddle table so 2048-sample image paths stay fast.
+function dftRaw(samples) {
   const N = samples.length;
+  const cosT = new Float64Array(N), sinT = new Float64Array(N);
+  for (let m = 0; m < N; m++) {
+    cosT[m] = Math.cos((2 * Math.PI * m) / N);
+    sinT[m] = Math.sin((2 * Math.PI * m) / N);
+  }
   const out = [];
   for (let k = 0; k < N; k++) {
-    let re = 0, im = 0;
+    let re = 0, im = 0, m = 0;
     for (let n = 0; n < N; n++) {
-      const phi = (2 * Math.PI * k * n) / N;
-      const cos = Math.cos(phi);
-      const sin = Math.sin(phi);
+      const cos = cosT[m], sin = sinT[m];
       re += samples[n].x * cos + samples[n].y * sin;
       im += -samples[n].x * sin + samples[n].y * cos;
+      m += k; if (m >= N) m -= N;
     }
     re /= N;
     im /= N;
     // Remap to signed frequency: k in [N/2, N) becomes k - N (negative freq).
     const freq = k < N / 2 ? k : k - N;
-    const amp = Math.sqrt(re * re + im * im);
-    const phase = Math.atan2(im, re);
-    // center frequencies around 0 (negative + positive) for aesthetic ordering later
-    out.push({ re, im, freq, amp, phase });
+    out.push({ re, im, freq, amp: Math.sqrt(re * re + im * im), phase: Math.atan2(im, re) });
   }
-  // reorder: 0, +1, -1, +2, -2, ... so strongest low-freq dominate
-  // Actually sort by amp descending for best visual tracing
-  out.sort((a, b) => b.amp - a.amp);
   return out;
+}
+
+function dft(samples) {
+  // Sort by amp descending for best visual tracing
+  return dftRaw(samples).sort((a, b) => b.amp - a.amp);
 }
 
 // Resample a polyline into N evenly-spaced points along its arc length.
@@ -151,7 +156,213 @@ function evalFourier(coeffs, t, K, phaseOffset = 0) {
   return tips;
 }
 
-Object.assign(window, { dft, resamplePath, closePath, centerPath, evalFourier });
+// Tip position only (no allocations) — used for sub-stepped tracing.
+function fourierTip(coeffs, t, K, phaseOffset = 0) {
+  let x = 0, y = 0;
+  const limit = Math.min(K, coeffs.length);
+  for (let i = 0; i < limit; i++) {
+    const c = coeffs[i];
+    const angle = c.freq * 2 * Math.PI * t + c.phase + phaseOffset;
+    x += c.amp * Math.cos(angle);
+    y += c.amp * Math.sin(angle);
+  }
+  return { x, y };
+}
+
+// ── Morph ────────────────────────────────────────────────────────────────
+// Prepare two closed paths for coefficient-space interpolation: same sample
+// count, matched size, and B rotated/reversed so its start point and winding
+// line up with A (otherwise the morph twists through itself).
+function prepareMorph(pathA, pathB, M = 512) {
+  const norm = (pts) => {
+    const r = resamplePath(closePath(pts), M);
+    let mx = 0, my = 0;
+    for (const p of r) { mx += p.x; my += p.y; }
+    mx /= r.length; my /= r.length;
+    const c = r.map((p) => ({ x: p.x - mx, y: p.y - my }));
+    let rms = 0;
+    for (const p of c) rms += p.x * p.x + p.y * p.y;
+    return { pts: c, rms: Math.sqrt(rms / c.length) || 1 };
+  };
+  const A = norm(pathA), B = norm(pathB);
+  const k = A.rms / B.rms;
+  const b = B.pts.map((p) => ({ x: p.x * k, y: p.y * k }));
+  const a = A.pts;
+  let best = { err: Infinity, shift: 0, dir: 1 };
+  for (const dir of [1, -1]) {
+    for (let shift = 0; shift < M; shift++) {
+      let err = 0;
+      for (let i = 0; i < M; i += 4) {
+        const q = b[(((shift + dir * i) % M) + M) % M];
+        const dx = a[i].x - q.x, dy = a[i].y - q.y;
+        err += dx * dx + dy * dy;
+        if (err >= best.err) break;
+      }
+      if (err < best.err) best = { err, shift, dir };
+    }
+  }
+  const bAligned = a.map((_, i) => b[(((best.shift + best.dir * i) % M) + M) % M]);
+  return { A: dftRaw(a), B: dftRaw(bAligned), pathA: a, pathB: bAligned };
+}
+
+// Linear blend in complex coefficient space, sorted by amplitude.
+function morphCoeffs(prep, s) {
+  const out = new Array(prep.A.length);
+  for (let i = 0; i < prep.A.length; i++) {
+    const a = prep.A[i], b = prep.B[i];
+    const re = a.re + (b.re - a.re) * s;
+    const im = a.im + (b.im - a.im) * s;
+    out[i] = { re, im, freq: a.freq, amp: Math.sqrt(re * re + im * im), phase: Math.atan2(im, re) };
+  }
+  return out.sort((x, y) => y.amp - x.amp);
+}
+
+// ── Image → path ─────────────────────────────────────────────────────────
+// Canny-style edge detection (blur → Sobel → non-max suppression →
+// hysteresis), then greedy nearest-neighbour ordering into one long path.
+// detail ∈ (0, 1]: fraction of candidate edge pixels kept as strong edges.
+function imageToPath(img, detail = 0.25, maxDim = 320) {
+  const sc = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const W = Math.max(8, Math.round(img.width * sc));
+  const H = Math.max(8, Math.round(img.height * sc));
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(img, 0, 0, W, H);
+  const data = ctx.getImageData(0, 0, W, H).data;
+
+  const gray = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    gray[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+  }
+
+  // Separable 5-tap Gaussian blur
+  const kern = [1, 4, 6, 4, 1];
+  const blur = (src, horiz) => {
+    const dst = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        let acc = 0;
+        for (let j = -2; j <= 2; j++) {
+          const xx = horiz ? Math.min(W - 1, Math.max(0, x + j)) : x;
+          const yy = horiz ? y : Math.min(H - 1, Math.max(0, y + j));
+          acc += src[yy * W + xx] * kern[j + 2];
+        }
+        dst[y * W + x] = acc / 16;
+      }
+    }
+    return dst;
+  };
+  const g = blur(blur(gray, true), false);
+
+  // Sobel
+  const mag = new Float32Array(W * H);
+  const dirBin = new Uint8Array(W * H);
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      const i = y * W + x;
+      const gx = -g[i - W - 1] - 2 * g[i - 1] - g[i + W - 1] + g[i - W + 1] + 2 * g[i + 1] + g[i + W + 1];
+      const gy = -g[i - W - 1] - 2 * g[i - W] - g[i - W + 1] + g[i + W - 1] + 2 * g[i + W] + g[i + W + 1];
+      mag[i] = Math.hypot(gx, gy);
+      let a = (Math.atan2(gy, gx) * 180) / Math.PI;
+      if (a < 0) a += 180;
+      dirBin[i] = a < 22.5 || a >= 157.5 ? 0 : a < 67.5 ? 1 : a < 112.5 ? 2 : 3;
+    }
+  }
+
+  // Non-max suppression
+  const nms = new Float32Array(W * H);
+  const offs = [[1, 0], [1, 1], [0, 1], [-1, 1]];
+  const cand = [];
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      const i = y * W + x;
+      const m = mag[i];
+      if (m < 4) continue;
+      const [dx, dy] = offs[dirBin[i]];
+      if (m >= mag[i + dy * W + dx] && m >= mag[i - dy * W - dx]) {
+        nms[i] = m;
+        cand.push(m);
+      }
+    }
+  }
+  if (cand.length === 0) return null;
+
+  // Hysteresis thresholds from the candidate distribution
+  cand.sort((p, q) => q - p);
+  const keep = Math.min(1, Math.max(0.01, detail));
+  const high = cand[Math.min(cand.length - 1, Math.floor(cand.length * keep))];
+  const low = high * 0.45;
+  const edge = new Uint8Array(W * H);
+  const stack = [];
+  for (let i = 0; i < W * H; i++) {
+    if (nms[i] >= high && !edge[i]) {
+      edge[i] = 1; stack.push(i);
+      while (stack.length) {
+        const j = stack.pop();
+        const jx = j % W, jy = (j / W) | 0;
+        for (let oy = -1; oy <= 1; oy++) {
+          for (let ox = -1; ox <= 1; ox++) {
+            const nx = jx + ox, ny = jy + oy;
+            if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+            const n = ny * W + nx;
+            if (!edge[n] && nms[n] >= low) { edge[n] = 1; stack.push(n); }
+          }
+        }
+      }
+    }
+  }
+
+  const pts = [];
+  for (let i = 0; i < W * H; i++) if (edge[i]) pts.push({ x: i % W, y: (i / W) | 0 });
+  if (pts.length < 8) return null;
+
+  // Greedy nearest-neighbour ordering with a spatial grid
+  const CELL = 6;
+  const gw = Math.ceil(W / CELL), gh = Math.ceil(H / CELL);
+  const grid = Array.from({ length: gw * gh }, () => []);
+  pts.forEach((p, i) => grid[((p.y / CELL) | 0) * gw + ((p.x / CELL) | 0)].push(i));
+  const used = new Uint8Array(pts.length);
+  let remaining = pts.length;
+  const order = [];
+  let cur = 0;
+  used[0] = 1; remaining--; order.push(pts[0]);
+  while (remaining > 0) {
+    const p = pts[cur];
+    const pcx = (p.x / CELL) | 0, pcy = (p.y / CELL) | 0;
+    let bestI = -1, bestD = Infinity;
+    for (let ring = 0; ring <= Math.max(gw, gh); ring++) {
+      for (let cy = pcy - ring; cy <= pcy + ring; cy++) {
+        if (cy < 0 || cy >= gh) continue;
+        for (let cx = pcx - ring; cx <= pcx + ring; cx++) {
+          if (cx < 0 || cx >= gw) continue;
+          if (ring > 0 && cy !== pcy - ring && cy !== pcy + ring && cx !== pcx - ring && cx !== pcx + ring) continue;
+          const bucket = grid[cy * gw + cx];
+          for (let b = bucket.length - 1; b >= 0; b--) {
+            const j = bucket[b];
+            if (used[j]) { bucket.splice(b, 1); continue; }
+            const d = (pts[j].x - p.x) ** 2 + (pts[j].y - p.y) ** 2;
+            if (d < bestD) { bestD = d; bestI = j; }
+          }
+        }
+      }
+      // Anything found within this ring is guaranteed nearer than the next ring
+      if (bestI >= 0 && Math.sqrt(bestD) <= ring * CELL) break;
+    }
+    if (bestI < 0) break;
+    used[bestI] = 1; remaining--;
+    order.push(pts[bestI]);
+    cur = bestI;
+  }
+
+  // Fit into the same ~520px world box the presets use
+  const s2 = 520 / Math.max(W, H);
+  return order.map((p) => ({ x: (p.x - W / 2) * s2, y: (p.y - H / 2) * s2 }));
+}
+
+Object.assign(window, { dft, dftRaw, resamplePath, closePath, centerPath, evalFourier, fourierTip, prepareMorph, morphCoeffs, imageToPath });
 
 </script>
 <script type="text/babel">
@@ -371,6 +582,29 @@ const I18N = {
     copied: 'Copied!',
     record: 'Record',
     recording: 'Recording…',
+    morph: "Morph",
+    taglineMorph: "Blend two shapes in Fourier space. Each coefficient slides from one shape to the other, so the epicycles reshape the curve smoothly.",
+    morphFrom: "From",
+    morphTo: "To",
+    morphMix: "Mix",
+    morphAuto: "Auto ping-pong",
+    morphPeriod: "Morph period",
+    currentShape: "My shape",
+    sound: "Sound",
+    sing: "🔊 Let the circles sing",
+    pitch: "Pitch",
+    volume: "Volume",
+    soundHint: "Each loop of the curve becomes one period of a stereo waveform: x → left, y → right. More epicycles add brighter overtones. Use headphones.",
+    scope: "XY scope · L vs R",
+    imageTab: "Image",
+    myImage: "My image",
+    image: "Image → epicycles",
+    uploadImage: "Upload image",
+    imageDetail: "Edge detail",
+    processing: "Tracing edges…",
+    imageFail: "No edges found",
+    imageHint: "Edges are traced into one long path. Line art and high-contrast photos work best. You can also drop an image onto the canvas.",
+    dropImage: "Drop an image to trace it",
     scrubber: 'Scrubber',
   },
 
@@ -435,6 +669,29 @@ const I18N = {
     copied: '已复制！',
     record: '录制',
     recording: '录制中…',
+    morph: "变形",
+    taglineMorph: "在傅里叶空间中混合两个形状。每个系数从一个形状平滑过渡到另一个，圆周随之连续变形。",
+    morphFrom: "起点",
+    morphTo: "终点",
+    morphMix: "混合",
+    morphAuto: "自动往返",
+    morphPeriod: "变形周期",
+    currentShape: "我的形状",
+    sound: "声音",
+    sing: "🔊 让圆圈唱歌",
+    pitch: "音高",
+    volume: "音量",
+    soundHint: "曲线每转一圈就是立体声波形的一个周期：x → 左声道，y → 右声道。圆圈越多，泛音越明亮。建议戴耳机。",
+    scope: "XY 示波器 · 左 vs 右",
+    imageTab: "图片",
+    myImage: "我的图片",
+    image: "图片 → 圆周",
+    uploadImage: "上传图片",
+    imageDetail: "边缘细节",
+    processing: "正在提取边缘…",
+    imageFail: "未检测到边缘",
+    imageHint: "边缘会被串成一条长路径。线稿和高对比度照片效果最好。也可以直接把图片拖到画布上。",
+    dropImage: "松开以描绘这张图片",
   },
 
   ja: {
@@ -498,6 +755,29 @@ const I18N = {
     copied: 'コピー完了！',
     record: '録画',
     recording: '録画中…',
+    morph: "モーフ",
+    taglineMorph: "フーリエ空間で2つの形をブレンド。各係数が一方から他方へ滑らかに移り、周転円が曲線を変形させます。",
+    morphFrom: "開始",
+    morphTo: "終了",
+    morphMix: "ミックス",
+    morphAuto: "自動往復",
+    morphPeriod: "モーフ周期",
+    currentShape: "自分の形",
+    sound: "サウンド",
+    sing: "🔊 円に歌わせる",
+    pitch: "音程",
+    volume: "音量",
+    soundHint: "曲線の1周がステレオ波形の1周期になります：x → 左、y → 右。周転円が多いほど倍音が明るくなります。ヘッドホン推奨。",
+    scope: "XY スコープ · L vs R",
+    imageTab: "画像",
+    myImage: "自分の画像",
+    image: "画像 → 周転円",
+    uploadImage: "画像をアップロード",
+    imageDetail: "エッジの詳細",
+    processing: "エッジを抽出中…",
+    imageFail: "エッジが見つかりません",
+    imageHint: "エッジを1本の長いパスにつなげます。線画やコントラストの高い写真がおすすめ。キャンバスへのドロップも可能です。",
+    dropImage: "ドロップして画像をトレース",
   },
 
   fr: {
@@ -561,6 +841,29 @@ const I18N = {
     copied: 'Copié !',
     record: 'Enregistrer',
     recording: 'Enregistrement…',
+    morph: "Morph",
+    taglineMorph: "Mélangez deux formes dans l'espace de Fourier. Chaque coefficient glisse d'une forme à l'autre et les épicycles remodèlent la courbe en douceur.",
+    morphFrom: "De",
+    morphTo: "Vers",
+    morphMix: "Mélange",
+    morphAuto: "Aller-retour auto",
+    morphPeriod: "Période du morph",
+    currentShape: "Ma forme",
+    sound: "Son",
+    sing: "🔊 Faire chanter les cercles",
+    pitch: "Hauteur",
+    volume: "Volume",
+    soundHint: "Chaque tour de la courbe devient une période d'une onde stéréo : x → gauche, y → droite. Plus d'épicycles donnent des harmoniques plus brillantes. Utilisez un casque.",
+    scope: "Oscilloscope XY · G vs D",
+    imageTab: "Image",
+    myImage: "Mon image",
+    image: "Image → épicycles",
+    uploadImage: "Importer une image",
+    imageDetail: "Détail des contours",
+    processing: "Extraction des contours…",
+    imageFail: "Aucun contour trouvé",
+    imageHint: "Les contours sont reliés en un seul long tracé. Dessins au trait et photos contrastées donnent les meilleurs résultats. Vous pouvez aussi déposer une image sur le canevas.",
+    dropImage: "Déposez une image pour la tracer",
   },
 
   es: {
@@ -624,6 +927,29 @@ const I18N = {
     copied: '¡Copiado!',
     record: 'Grabar',
     recording: 'Grabando…',
+    morph: "Morph",
+    taglineMorph: "Mezcla dos formas en el espacio de Fourier. Cada coeficiente se desliza de una forma a otra y los epiciclos remodelan la curva suavemente.",
+    morphFrom: "Desde",
+    morphTo: "Hacia",
+    morphMix: "Mezcla",
+    morphAuto: "Ida y vuelta auto",
+    morphPeriod: "Periodo del morph",
+    currentShape: "Mi forma",
+    sound: "Sonido",
+    sing: "🔊 Haz cantar a los círculos",
+    pitch: "Tono",
+    volume: "Volumen",
+    soundHint: "Cada vuelta de la curva se convierte en un periodo de una onda estéreo: x → izquierda, y → derecha. Más epiciclos añaden armónicos más brillantes. Usa auriculares.",
+    scope: "Osciloscopio XY · I vs D",
+    imageTab: "Imagen",
+    myImage: "Mi imagen",
+    image: "Imagen → epiciclos",
+    uploadImage: "Subir imagen",
+    imageDetail: "Detalle de bordes",
+    processing: "Trazando bordes…",
+    imageFail: "No se encontraron bordes",
+    imageHint: "Los bordes se unen en un solo trazo largo. Los dibujos de línea y las fotos con mucho contraste funcionan mejor. También puedes soltar una imagen en el lienzo.",
+    dropImage: "Suelta una imagen para trazarla",
   },
 };
 
@@ -993,6 +1319,7 @@ function FourierCanvas({
   onTimeUpdate,
   traceColor, traceWidth, phaseOffset,
   seekRef, canvasRefOut, isRecording,
+  morph, onMorphUpdate,
 }) {
   const canvasRef = React.useRef(null);
   const overlayRef = React.useRef(null);
@@ -1009,6 +1336,8 @@ function FourierCanvas({
   const rafRef = React.useRef(0);
   const lastTsRef = React.useRef(0);
   const drawingRef = React.useRef(false);
+  const traceAdvRef = React.useRef(0); // t covered by the current trace; infinite trail stops after one loop
+  const morphPhaseRef = React.useRef(0);
 
   // Resize observer
   React.useEffect(() => {
@@ -1030,6 +1359,7 @@ function FourierCanvas({
     if (seekRef) seekRef.current = (newT) => {
       tRef.current = newT;
       tracePtsRef.current = [];
+      traceAdvRef.current = 0;
     };
   });
 
@@ -1037,7 +1367,14 @@ function FourierCanvas({
   React.useEffect(() => {
     tracePtsRef.current = [];
     tRef.current = 0;
+    traceAdvRef.current = 0;
   }, [coeffs]);
+
+  // Restart the trace when the curve itself changes shape
+  React.useEffect(() => {
+    tracePtsRef.current = [];
+    traceAdvRef.current = 0;
+  }, [N, phaseOffset, trailMode]);
 
   // Reset zoom
   const resetView = () => {
@@ -1168,25 +1505,55 @@ function FourierCanvas({
     const ctx = c.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    if (!coeffs || coeffs.length === 0) {
+    if (!morph && (!coeffs || coeffs.length === 0)) {
       ctx.clearRect(0, 0, dims.w, dims.h);
       return;
     }
+
+    const maxAge = trailMode === 'infinite' ? Infinity : trailMode === 'long' ? 3.0 : 1.2;
 
     const tick = (ts) => {
       if (!lastTsRef.current) lastTsRef.current = ts;
       const dt = Math.min((ts - lastTsRef.current) / 1000, 0.05);
       lastTsRef.current = ts;
 
+      // Morph: blend coefficients each frame; s ping-pongs with an ease.
+      let cs = coeffs;
+      let morphCurve = null;
+      if (morph) {
+        let ms = morph.s;
+        if (morph.auto) {
+          if (playing) morphPhaseRef.current = (morphPhaseRef.current + dt / morph.period) % 1;
+          ms = 0.5 - 0.5 * Math.cos(2 * Math.PI * morphPhaseRef.current);
+          onMorphUpdate && onMorphUpdate(ms);
+        } else {
+          morphPhaseRef.current = Math.acos(1 - 2 * ms) / (2 * Math.PI);
+        }
+        cs = morphCoeffs(morph.prep, ms);
+        morphCurve = [];
+        for (let i = 0; i <= 400; i++) morphCurve.push(fourierTip(cs, i / 400, N, phaseOffset || 0));
+      }
+
+      const prevT = tRef.current;
       if (playing) tRef.current = (tRef.current + dt * speed) % 1;
       const t = tRef.current;
       onTimeUpdate && onTimeUpdate(t);
 
-      const tips = evalFourier(coeffs, t, N, phaseOffset || 0);
+      const tips = evalFourier(cs, t, N, phaseOffset || 0);
       const tip = tips[tips.length - 1];
 
-      if (playing) tracePtsRef.current.push({ x: tip.x, y: tip.y, age: 0 });
-      const maxAge = trailMode === 'infinite' ? Infinity : trailMode === 'long' ? 3.0 : 1.2;
+      // Sub-step the trace so detailed shapes (images) stay smooth at any speed.
+      if (playing && !morph && !(maxAge === Infinity && traceAdvRef.current >= 1)) {
+        const adv = dt * speed;
+        const steps = Math.min(64, Math.max(1, Math.ceil(adv * 2000)));
+        for (let k = 1; k <= steps; k++) {
+          const tk = prevT + (adv * k) / steps;
+          const p = k === steps ? tip : fourierTip(cs, tk % 1, N, phaseOffset || 0);
+          tracePtsRef.current.push({ x: p.x, y: p.y, age: (dt * (steps - k)) / steps });
+          if (maxAge === Infinity && traceAdvRef.current + (adv * k) / steps >= 1) break;
+        }
+        traceAdvRef.current += adv;
+      }
       for (const p of tracePtsRef.current) p.age += dt;
       if (maxAge !== Infinity) tracePtsRef.current = tracePtsRef.current.filter((p) => p.age < maxAge);
 
@@ -1209,7 +1576,16 @@ function FourierCanvas({
       const trace = tracePtsRef.current;
       const tColor = traceColor || theme.trace;
       const tWidth = traceWidth || 2.2;
-      if (trace.length > 1) {
+      if (morphCurve) {
+        ctx.lineWidth = tWidth / scale;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = tColor;
+        ctx.beginPath();
+        ctx.moveTo(morphCurve[0].x, morphCurve[0].y);
+        for (let i = 1; i < morphCurve.length; i++) ctx.lineTo(morphCurve[i].x, morphCurve[i].y);
+        ctx.stroke();
+      } else if (trace.length > 1) {
         ctx.lineWidth = tWidth / scale;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -1272,7 +1648,7 @@ function FourierCanvas({
 
     rafRef.current = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(rafRef.current); lastTsRef.current = 0; };
-  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording]);
+  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording, morph]);
 
   // Unified pointer events: mouse, touch, stylus — with pressure support and pinch-to-zoom
   const canvasToWorld = (cx, cy, pressure = 1) => {
@@ -1413,12 +1789,158 @@ Object.assign(window, { FourierCanvas });
 
 </script>
 <script type="text/babel">
+// Sound: the Fourier series played as stereo audio. x(t) → left, y(t) → right,
+// one loop of the curve per waveform period — the shape *is* the sound, and an
+// XY oscilloscope fed this signal draws the shape back.
+
+const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+const pitchToMidi = (i) => 33 + i; // i = 0 → A1 (55 Hz)
+const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
+const midiToName = (m) => `${NOTE_NAMES[m % 12]}${Math.floor(m / 12) - 1}`;
+
+class FourierSynth {
+  constructor() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0;
+    this.master.connect(this.ctx.destination);
+    // Taps for the XY scope
+    const split = this.ctx.createChannelSplitter(2);
+    this.anL = this.ctx.createAnalyser();
+    this.anR = this.ctx.createAnalyser();
+    this.anL.fftSize = this.anR.fftSize = 2048;
+    this.master.connect(split);
+    split.connect(this.anL, 0);
+    split.connect(this.anR, 1);
+    this.voice = null; // { src, gain }
+  }
+
+  setVolume(v) {
+    this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.03);
+  }
+
+  // Render one period of the curve into a looping stereo buffer and
+  // crossfade to it. Harmonics above ~Nyquist are dropped to avoid aliasing.
+  play(coeffs, N, freq) {
+    const ctx = this.ctx;
+    if (!coeffs || !coeffs.length) { this.fadeOut(); return; }
+    const sr = ctx.sampleRate;
+    const P = Math.max(16, Math.round(sr / freq));
+    const f0 = sr / P;
+    const limit = Math.min(N, coeffs.length);
+    const parts = [];
+    for (let i = 0; i < limit; i++) {
+      const c = coeffs[i];
+      if (c.freq === 0 || Math.abs(c.freq) * f0 > sr * 0.45) continue; // no DC, no aliasing
+      parts.push(c);
+    }
+    if (!parts.length) { this.fadeOut(); return; }
+    const buf = ctx.createBuffer(2, P, sr);
+    const L = buf.getChannelData(0), R = buf.getChannelData(1);
+    for (const c of parts) {
+      const w = (2 * Math.PI * c.freq) / P;
+      for (let n = 0; n < P; n++) {
+        const a = w * n + c.phase;
+        L[n] += c.amp * Math.cos(a);
+        R[n] += c.amp * Math.sin(a);
+      }
+    }
+    let peak = 1e-9;
+    for (let n = 0; n < P; n++) peak = Math.max(peak, Math.abs(L[n]), Math.abs(R[n]));
+    const k = 0.9 / peak;
+    for (let n = 0; n < P; n++) { L[n] *= k; R[n] *= k; }
+
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    src.connect(gain).connect(this.master);
+    const now = ctx.currentTime;
+    src.start(now);
+    gain.gain.setTargetAtTime(1, now, 0.015);
+    this.fadeOut();
+    this.voice = { src, gain };
+  }
+
+  fadeOut() {
+    if (!this.voice) return;
+    const { src, gain } = this.voice;
+    const now = this.ctx.currentTime;
+    gain.gain.setTargetAtTime(0, now, 0.015);
+    src.stop(now + 0.12);
+    this.voice = null;
+  }
+
+  stop() {
+    this.fadeOut();
+    this.setVolume(0);
+  }
+}
+
+// Live XY scope reading the synth's own output.
+function SoundScope({ synth, theme, label, volume }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const c = ref.current;
+    if (!c || !synth) return;
+    const S = 150, dpr = window.devicePixelRatio || 1;
+    c.width = S * dpr; c.height = S * dpr;
+    const ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const L = new Float32Array(synth.anL.fftSize), R = new Float32Array(synth.anR.fftSize);
+    let raf;
+    const draw = () => {
+      synth.anL.getFloatTimeDomainData(L);
+      synth.anR.getFloatTimeDomainData(R);
+      ctx.clearRect(0, 0, S, S);
+      ctx.strokeStyle = theme.grid;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(S / 2, 0); ctx.lineTo(S / 2, S);
+      ctx.moveTo(0, S / 2); ctx.lineTo(S, S / 2);
+      ctx.stroke();
+      ctx.strokeStyle = theme.trace;
+      ctx.lineWidth = 1.2;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      // Undo the volume knob so the picture stays full-size
+      const h = (S / 2 - 8) / Math.max(0.05, volume);
+      for (let i = 0; i < L.length; i++) {
+        const x = S / 2 + L[i] * h, y = S / 2 + R[i] * h;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [synth, theme, volume]);
+  return (
+    <div style={{
+      background: theme.panel, border: `1px solid ${theme.line}`, borderRadius: 8,
+      padding: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+    }}>
+      <div style={{
+        fontFamily: 'JetBrains Mono, monospace', fontSize: 9, letterSpacing: 2,
+        textTransform: 'uppercase', color: theme.muted, marginBottom: 6,
+      }}>{label}</div>
+      <canvas ref={ref} style={{ width: 150, height: 150, display: 'block' }} />
+    </div>
+  );
+}
+
+Object.assign(window, { FourierSynth, SoundScope, pitchToMidi, midiToFreq, midiToName });
+
+</script>
+<script type="text/babel">
 // Main App: layout, state, tweaks bridge.
 
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
 // URL state encode/decode (feature 7)
-function encodeURLState({ preset, coeffs, N, speed, phaseOffset, traceColor, traceWidth, themeKey, mode, vectors }) {
+function encodeURLState({ preset, coeffs, N, speed, phaseOffset, traceColor, traceWidth, themeKey, mode, vectors, morphA, morphB }) {
   const o = { v: 1 };
   if (preset) {
     o.p = preset;
@@ -1434,6 +1956,9 @@ function encodeURLState({ preset, coeffs, N, speed, phaseOffset, traceColor, tra
   if (mode === 'studio') {
     o.m = 's';
     if (vectors) o.vec = vectors.map((v) => [v.freq, +v.amp.toFixed(2), +v.phase.toFixed(4)]);
+  }
+  if (mode === 'morph' && PRESETS[morphA] && PRESETS[morphB]) {
+    o.m = 'm'; o.ma = morphA; o.mb = morphB;
   }
   return btoa(JSON.stringify(o));
 }
@@ -1512,6 +2037,26 @@ function App() {
   const seekRef = useRef(null);
   const wasPlayingRef = useRef(false);
 
+  // image mode: its own shape, N and speed so it never clobbers the drawing
+  const [image, setImage] = useState(null); // HTMLImageElement
+  const [imagePath, setImagePath] = useState(null);
+  const [imageCoeffs, setImageCoeffs] = useState(null);
+  const [imageN, setImageN] = useState(400);
+  const [imageSpeed, setImageSpeed] = useState(0.04);
+  const [imageDetail, setImageDetail] = useState(0.25);
+  const [imageBusy, setImageBusy] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // morph
+  const [morphA, setMorphA] = useState('heart');
+  const [morphB, setMorphB] = useState('star');
+  const [morphS, setMorphS] = useState(0);       // manual mix
+  const [morphLive, setMorphLive] = useState(0); // live mix while auto-playing
+  const [morphAuto, setMorphAuto] = useState(true);
+  const [morphPeriod, setMorphPeriod] = useState(6);
+
   // When a preset is chosen, compute coefficients.
   const applyPath = useCallback((points, presetKey = null) => {
     if (!points || points.length < 4) return;
@@ -1553,6 +2098,10 @@ function App() {
       setMode('studio');
       if (decoded.vec) setVectors(decoded.vec.map((v, i) => ({ id: i + 1, freq: v[0], amp: v[1], phase: v[2] })));
     }
+    if (decoded.m === 'm' && PRESETS[decoded.ma] && PRESETS[decoded.mb]) {
+      setMorphA(decoded.ma); setMorphB(decoded.mb); setMode('morph');
+      if (!decoded.p && !decoded.c) applyPath(PRESETS.heart.fn(), 'heart');
+    }
     return true;
   }, [applyPath]);
 
@@ -1571,6 +2120,56 @@ function App() {
     setActivePreset(key);
     if (PRESETS[key]) applyPath(PRESETS[key].fn(), key);
   };
+
+  // Image → edge path → epicycles
+  const processImage = useCallback((img, detail) => {
+    setImageBusy(true);
+    setImageError(false);
+    // Yield a frame so the "processing" state paints before the heavy work.
+    setTimeout(() => {
+      const path = imageToPath(img, detail);
+      setImageBusy(false);
+      if (!path) { setImageError(true); return; }
+      const { centered } = centerPath(closePath(path));
+      setImagePath(centered);
+      setImageCoeffs(dft(resamplePath(centered, 2048)));
+      setPlaying(true);
+    }, 30);
+  }, []);
+
+  const loadImageFile = useCallback((file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { setImage(img); setMode('image'); processImage(img, imageDetail); URL.revokeObjectURL(url); };
+    img.onerror = () => { setImageError(true); URL.revokeObjectURL(url); };
+    img.src = url;
+  }, [processImage, imageDetail]);
+
+  // Re-run edge detection when the detail slider settles
+  const detailTimerRef = useRef(0);
+  const changeImageDetail = (v) => {
+    setImageDetail(v);
+    clearTimeout(detailTimerRef.current);
+    if (image) detailTimerRef.current = setTimeout(() => processImage(image, v), 250);
+  };
+
+  // Morph: source paths for each side
+  const morphSourcePath = (key) => (key === 'current' ? userPath : key === 'image' ? imagePath : PRESETS[key]?.fn());
+  const morphPrep = useMemo(() => {
+    if (mode !== 'morph') return null;
+    const a = morphSourcePath(morphA), b = morphSourcePath(morphB);
+    if (!a || !b || a.length < 4 || b.length < 4) return null;
+    return prepareMorph(a, b);
+    // eslint-disable-next-line
+  }, [mode, morphA, morphB, morphA === 'current' || morphB === 'current' ? userPath : null,
+      morphA === 'image' || morphB === 'image' ? imagePath : null]);
+  const morphMix = morphAuto ? morphLive : morphS;
+  const morphProp = useMemo(
+    () => (morphPrep ? { prep: morphPrep, auto: morphAuto, s: morphS, period: morphPeriod } : null),
+    [morphPrep, morphAuto, morphAuto ? null : morphS, morphPeriod],
+  );
+  const morphNow = useMemo(() => (morphPrep ? morphCoeffs(morphPrep, morphMix) : null), [morphPrep, morphMix]);
 
   // Drawing handlers
   const onDrawStart = (pt) => {
@@ -1625,14 +2224,15 @@ function App() {
   }, []);
 
   const copyShareURL = useCallback(() => {
-    const aC = mode === 'studio' ? studioCoeffs : coeffs;
-    const encoded = encodeURLState({ preset: activePreset, coeffs: aC, N, speed, phaseOffset, traceColor, traceWidth, themeKey, mode, vectors });
+    const aC = mode === 'studio' ? studioCoeffs : mode === 'image' ? imageCoeffs : coeffs;
+    const encoded = encodeURLState({ preset: mode === 'image' ? null : activePreset, coeffs: aC,
+      N: mode === 'image' ? Math.min(imageN, 60) : N, speed: mode === 'image' ? imageSpeed : speed, phaseOffset, traceColor, traceWidth, themeKey, mode, vectors, morphA, morphB });
     const url = window.location.href.split('#')[0] + '#s=' + encoded;
     window.history.replaceState(null, '', '#s=' + encoded);
     navigator.clipboard.writeText(url).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [mode, studioCoeffs, coeffs, activePreset, N, speed, phaseOffset, traceColor, traceWidth, themeKey, vectors]);
+  }, [mode, studioCoeffs, imageCoeffs, imageN, imageSpeed, coeffs, activePreset, N, speed, phaseOffset, traceColor, traceWidth, themeKey, vectors, morphA, morphB]);
 
   const startRecording = useCallback(() => {
     const canvas = recordCanvasRef.current;
@@ -1653,9 +2253,11 @@ function App() {
     };
     recorder.start(100);
     setRecording(true);
-    const duration = Math.max(1500, (1 / speed) * 1000 + 300);
+    const duration = mode === 'morph' && morphAuto
+      ? morphPeriod * 1000 + 300
+      : Math.max(1500, (1 / (mode === 'image' ? imageSpeed : speed)) * 1000 + 300);
     setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, duration);
-  }, [recording, speed]);
+  }, [recording, speed, imageSpeed, mode, morphAuto, morphPeriod]);
 
   const scrubberSeek = useCallback((newT) => {
     seekRef.current?.(newT);
@@ -1663,8 +2265,8 @@ function App() {
   }, []);
 
   const exportSVG = useCallback(() => {
-    const aC = mode === 'studio' ? studioCoeffs : coeffs;
-    const aN = mode === 'studio' ? studioCoeffs.length : N;
+    const aC = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : coeffs;
+    const aN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : N;
     if (!aC || !aC.length) return;
     const steps = 2000;
     const pts = [];
@@ -1688,11 +2290,11 @@ function App() {
     const a = document.createElement('a');
     a.href = url; a.download = 'fourier-canvas.svg'; a.click();
     URL.revokeObjectURL(url);
-  }, [mode, studioCoeffs, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
+  }, [mode, studioCoeffs, morphNow, imageCoeffs, imageN, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
 
   const exportPNG = useCallback(() => {
-    const aC = mode === 'studio' ? studioCoeffs : coeffs;
-    const aN = mode === 'studio' ? studioCoeffs.length : N;
+    const aC = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : coeffs;
+    const aN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : N;
     if (!aC || !aC.length) return;
     const steps = 2000;
     const pts = [];
@@ -1727,7 +2329,7 @@ function App() {
       a.href = url; a.download = 'fourier-canvas.png'; a.click();
       URL.revokeObjectURL(url);
     });
-  }, [mode, studioCoeffs, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
+  }, [mode, studioCoeffs, morphNow, imageCoeffs, imageN, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
 
   // Expose keyboard shortcut targets
   useEffect(() => {
@@ -1755,7 +2357,7 @@ function App() {
 
   // Amplitude summary for the math panel
   const topAmps = useMemo(() => {
-    const src = mode === 'studio' ? studioCoeffs : coeffs;
+    const src = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : coeffs;
     if (!src) return [];
     return src.slice(0, 8).map((c, i) => ({
       i,
@@ -1763,13 +2365,44 @@ function App() {
       amp: c.amp,
       phase: c.phase,
     }));
-  }, [coeffs, studioCoeffs, mode]);
+  }, [coeffs, studioCoeffs, morphNow, imageCoeffs, mode]);
 
-  const maxN = Math.min(coeffs ? coeffs.length : 200, 200);
+  const maxN = mode === 'image'
+    ? Math.min(imageCoeffs ? imageCoeffs.length : 1000, 1000)
+    : Math.min(mode !== 'morph' && coeffs ? coeffs.length : 200, 200);
 
   // In studio mode, the active coeffs come from user vectors; maxN is len.
-  const activeCoeffs = mode === 'studio' ? studioCoeffs : coeffs;
-  const activeN = mode === 'studio' ? studioCoeffs.length : N;
+  const activeCoeffs = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : coeffs;
+  const activeN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : N;
+  const activeSpeed = mode === 'image' ? imageSpeed : speed;
+
+  // Sound: the circles sing
+  const [singing, setSinging] = useState(false);
+  const [pitch, setPitch] = useState(12); // semitones above A1 → A2 = 110 Hz
+  const [volume, setVolume] = useState(0.4);
+  const [synth, setSynth] = useState(null);
+  const soundTimerRef = useRef({ last: 0, id: 0 });
+  const toggleSing = (on) => {
+    let sy = synth;
+    if (on && !sy) { sy = new FourierSynth(); setSynth(sy); }
+    if (!sy) return;
+    if (on) { sy.ctx.resume(); sy.setVolume(volume); } else sy.stop();
+    setSinging(on);
+  };
+  useEffect(() => { if (synth && singing) synth.setVolume(volume); }, [volume]);
+  // Re-render the waveform when the shape changes (throttled — morph changes every frame)
+  useEffect(() => {
+    if (!synth || !singing) return;
+    const timer = soundTimerRef.current;
+    const run = () => {
+      timer.last = performance.now();
+      synth.play(activeCoeffs, activeN, midiToFreq(pitchToMidi(pitch)));
+    };
+    clearTimeout(timer.id);
+    const wait = 60 - (performance.now() - timer.last);
+    if (wait <= 0) run(); else timer.id = setTimeout(run, wait);
+  }, [synth, singing, activeCoeffs, activeN, pitch]);
+  useEffect(() => () => synth && synth.ctx.close(), [synth]);
 
   // Inline live-drawing render inside canvas (via extra prop)
   const activePath = isDrawing && rawDrawing.length > 1 ? rawDrawing : userPath;
@@ -1820,13 +2453,13 @@ function App() {
           </div>
           {/* Mode toggle */}
           <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
             border: `1px solid ${theme.line}`, borderRadius: 8, overflow: 'hidden',
           }}>
-            {[['draw', tr.draw], ['studio', tr.studio]].map(([k, label]) => (
+            {[['draw', tr.draw], ['image', tr.imageTab], ['studio', tr.studio], ['morph', tr.morph]].map(([k, label]) => (
               <button key={k} onClick={() => setMode(k)}
                 style={{
-                  padding: '9px 8px', fontSize: 12, fontFamily: 'Inter, sans-serif',
+                  padding: '9px 4px', fontSize: 12, fontFamily: 'Inter, sans-serif',
                   fontWeight: 600, letterSpacing: 0.4, cursor: 'pointer',
                   background: mode === k ? theme.ink : 'transparent',
                   color: mode === k ? theme.panel : theme.muted,
@@ -1844,7 +2477,7 @@ function App() {
         }}>
         {/* Description */}
         <div style={{ fontSize: 12, color: theme.muted, lineHeight: 1.5 }}>
-          {mode === 'draw' ? tr.tagline : tr.taglineStudio}
+          {mode === 'draw' ? tr.tagline : mode === 'morph' ? tr.taglineMorph : mode === 'image' ? tr.imageHint : tr.taglineStudio}
         </div>
 
         {mode === 'studio' && (
@@ -1872,6 +2505,82 @@ function App() {
               </Button>
             </div>
           </section>
+        )}
+
+        {mode === 'morph' && (
+          <>
+          {[[tr.morphFrom, morphA, setMorphA], [tr.morphTo, morphB, setMorphB]].map(([label, val, set]) => (
+            <section key={label}>
+              <SectionLabel theme={theme}>{label}</SectionLabel>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {userPath && (
+                  <PresetChip label={tr.currentShape} active={val === 'current'} theme={theme} onClick={() => set('current')} />
+                )}
+                {imagePath && (
+                  <PresetChip label={tr.myImage} active={val === 'image'} theme={theme} onClick={() => set('image')} />
+                )}
+                {Object.entries(PRESETS).map(([key, p]) => (
+                  <PresetChip key={key} label={p.label} active={val === key} theme={theme} onClick={() => set(key)} />
+                ))}
+              </div>
+            </section>
+          ))}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <SectionLabel theme={theme}>{tr.controls}</SectionLabel>
+            <Slider label={tr.morphMix} value={morphMix} min={0} max={1} step={0.001} theme={theme}
+              onChange={(v) => { setMorphAuto(false); setMorphS(v); }}
+              format={(v) => `${Math.round(v * 100)}%`} />
+            <Toggle label={tr.morphAuto} value={morphAuto} theme={theme}
+              onChange={(v) => { if (!v) setMorphS(morphLive); setMorphAuto(v); }} />
+            <Slider label={tr.morphPeriod} value={morphPeriod} min={2} max={20} step={0.5} theme={theme}
+              onChange={setMorphPeriod} format={(v) => `${v}s`} />
+            <Slider label={tr.epicycles} value={N} min={1} max={maxN} step={1} theme={theme}
+              onChange={setN} format={(v) => `${v}`} />
+            <Slider label={tr.speed} value={speed} min={0.02} max={1.5} step={0.01} theme={theme}
+              onChange={setSpeed} format={(v) => `${v.toFixed(2)}×`} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button theme={theme} primary onClick={() => setPlaying((p) => !p)}>
+                {playing ? tr.pause : tr.play}
+              </Button>
+            </div>
+          </section>
+          </>
+        )}
+
+        {/* Image → epicycles */}
+        {mode === 'image' && (
+        <>
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <SectionLabel theme={theme}>{tr.image}</SectionLabel>
+          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={(e) => { loadImageFile(e.target.files[0]); e.target.value = ''; }} />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Button theme={theme} primary={!image} onClick={() => fileInputRef.current?.click()}>{tr.uploadImage}</Button>
+            {imageBusy && <span style={{ fontSize: 11, color: theme.muted }}>{tr.processing}</span>}
+            {imageError && !imageBusy && <span style={{ fontSize: 11, color: theme.accent }}>{tr.imageFail}</span>}
+          </div>
+          {image && (
+            <Slider label={tr.imageDetail} value={imageDetail} min={0.03} max={0.6} step={0.01} theme={theme}
+              onChange={changeImageDetail} format={(v) => `${Math.round(v * 100)}%`} />
+          )}
+        </section>
+        {imageCoeffs && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <SectionLabel theme={theme}>{tr.controls}</SectionLabel>
+          <Slider label={tr.epicycles} value={imageN} min={1} max={maxN} step={1} theme={theme}
+            onChange={setImageN} format={(v) => `${v}`} />
+          <Slider label={tr.speed} value={imageSpeed} min={0.01} max={0.5} step={0.01} theme={theme}
+            onChange={setImageSpeed} format={(v) => `${v.toFixed(2)}×`} />
+          <Slider label={tr.phaseOffset} value={phaseOffset} min={0} max={6.2832} step={0.01} theme={theme}
+            onChange={setPhaseOffset} format={(v) => `${(v / Math.PI).toFixed(2)}π`} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button theme={theme} primary onClick={() => setPlaying((p) => !p)}>
+              {playing ? tr.pause : tr.play}
+            </Button>
+          </div>
+        </section>
+        )}
+        </>
         )}
 
         {/* Presets */}
@@ -1937,6 +2646,24 @@ function App() {
           </div>
         </section>
         </>
+        )}
+
+        {/* Sound */}
+        {activeCoeffs && activeCoeffs.length > 0 && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <SectionLabel theme={theme}>{tr.sound}</SectionLabel>
+          <Toggle label={tr.sing} value={singing} onChange={toggleSing} theme={theme} />
+          {singing && (
+            <>
+            <Slider label={tr.pitch} value={pitch} min={0} max={48} step={1} theme={theme}
+              onChange={setPitch}
+              format={(v) => `${midiToName(pitchToMidi(v))} · ${Math.round(midiToFreq(pitchToMidi(v)))} Hz`} />
+            <Slider label={tr.volume} value={volume} min={0} max={1} step={0.01} theme={theme}
+              onChange={setVolume} format={(v) => `${Math.round(v * 100)}%`} />
+            </>
+          )}
+          <div style={{ fontSize: 11, color: theme.muted, lineHeight: 1.5 }}>{tr.soundHint}</div>
+        </section>
         )}
 
         {/* Layers */}
@@ -2033,7 +2760,19 @@ function App() {
       </aside>
 
       {/* Main canvas area */}
-      <main style={{ position: 'relative', overflow: 'hidden' }}>
+      <main style={{ position: 'relative', overflow: 'hidden' }}
+        onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDragOver(true); } }}
+        onDragLeave={(e) => { if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget)) setDragOver(false); }}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); loadImageFile(e.dataTransfer.files[0]); }}>
+        {dragOver && (
+          <div style={{
+            position: 'absolute', inset: 12, zIndex: 6, pointerEvents: 'none',
+            border: `2px dashed ${theme.accent}`, borderRadius: 12,
+            background: `${theme.bg}d9`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'Newsreader, Georgia, serif', fontStyle: 'italic', fontSize: 22, color: theme.ink,
+          }}>{tr.dropImage}</div>
+        )}
         {/* Top status bar */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2,
@@ -2047,7 +2786,11 @@ function App() {
           }}>
             {mode === 'studio'
               ? tr.vectorCount(vectors.length)
-              : (coeffs ? `${N} / ${coeffs.length} ${tr.harmonics}` : tr.ready)}
+              : mode === 'morph'
+                ? `${tr.morph} · ${Math.round(morphMix * 100)}%`
+                : mode === 'image'
+                  ? (imageCoeffs ? `${imageN} / ${imageCoeffs.length} ${tr.harmonics}` : tr.ready)
+                  : (coeffs ? `${N} / ${coeffs.length} ${tr.harmonics}` : tr.ready)}
             <span style={{ margin: '0 10px', color: theme.line }}>│</span>
             t = {t.toFixed(3)}
           </div>
@@ -2102,17 +2845,19 @@ function App() {
         {/* Canvas */}
         <FourierCanvas
           theme={theme}
-          coeffs={activeCoeffs}
-          userPath={mode === 'studio' ? null : activePath}
+          coeffs={mode === 'morph' ? null : activeCoeffs}
+          userPath={mode === 'draw' ? activePath : mode === 'image' ? imagePath : null}
           pathResampled={pathResampled}
           N={activeN}
-          speed={speed}
+          speed={activeSpeed}
           playing={playing && !isDrawing}
           showCircles={showCircles}
           showVectors={showVectors}
-          showUserPath={showUserPath && mode !== 'studio'}
+          showUserPath={showUserPath && (mode === 'draw' || mode === 'image')}
           trailMode={trailMode}
           canDraw={mode === 'draw'}
+          morph={mode === 'morph' ? morphProp : null}
+          onMorphUpdate={setMorphLive}
           onDrawStart={onDrawStart}
           onDrawPoint={onDrawPoint}
           onDrawEnd={onDrawEnd}
@@ -2198,6 +2943,13 @@ function App() {
           >{tr.showMath}</button>
         )}
 
+        {/* XY scope of the audio output */}
+        {singing && synth && activeCoeffs && (
+          <div style={{ position: 'absolute', top: 52, left: 20, zIndex: 3 }}>
+            <SoundScope synth={synth} theme={theme} label={tr.scope} volume={volume} />
+          </div>
+        )}
+
         {/* Recording indicator */}
         {recording && (
           <div style={{
@@ -2240,8 +2992,24 @@ function App() {
           </div>
         )}
 
+        {mode === 'image' && !imageCoeffs && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'none',
+          }}>
+            <div style={{
+              color: theme.muted, textAlign: 'center',
+              fontFamily: 'Newsreader, Georgia, serif',
+              fontSize: 20, fontStyle: 'italic', letterSpacing: -0.2,
+            }}>
+              {imageBusy ? tr.processing : tr.dropImage}
+            </div>
+          </div>
+        )}
+
         {/* Empty state hint */}
-        {!coeffs && !isDrawing && (
+        {!coeffs && !isDrawing && mode === 'draw' && (
           <div style={{
             position: 'absolute', inset: 0, display: 'flex',
             alignItems: 'center', justifyContent: 'center',
