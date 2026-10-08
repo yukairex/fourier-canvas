@@ -620,6 +620,7 @@ const I18N = {
     audioMelody: "melody appears here",
     audioHint: "A pure tone draws a circle; richer timbres add loops. One trip around the curve is one period of the wave. Mono audio uses the analytic signal (x + i·Hilbert x).",
     audioMicFail: "Microphone unavailable",
+    audioMicErr: {"denied": "Microphone permission was blocked. Allow it in the address bar (or system settings) and try again.", "unsupported": "This browser can't access the microphone. In-app browsers (WeChat, etc.) often can't; open the page in Safari or Chrome.", "insecure": "The microphone needs an HTTPS page.", "nodevice": "No microphone found.", "busy": "The microphone is in use by another app."},
     audioFail: "Couldn't decode that file",
     audioEmpty: "Sing a note or drop an audio file",
     dropAudio: "Drop an audio file",
@@ -733,6 +734,7 @@ const I18N = {
     audioMelody: "旋律会显示在这里",
     audioHint: "纯音画出一个圆；音色越丰富，圈越多。沿曲线走一圈就是波形的一个周期。单声道音频使用解析信号（x + i·希尔伯特变换 x）。",
     audioMicFail: "无法使用麦克风",
+    audioMicErr: {"denied": "麦克风权限被拒绝。请在地址栏（或系统设置）里允许后再试。", "unsupported": "这个浏览器无法使用麦克风。微信等 App 内置浏览器通常不支持，请用 Safari 或 Chrome 打开。", "insecure": "麦克风需要 HTTPS 页面。", "nodevice": "没有找到麦克风。", "busy": "麦克风正被其他应用占用。"},
     audioFail: "无法解码该文件",
     audioEmpty: "唱一个音，或拖入一段音频",
     dropAudio: "拖入音频文件",
@@ -845,6 +847,7 @@ const I18N = {
     audioMelody: "ここにメロディが表示されます",
     audioHint: "純音は円を描き、音色が豊かになるほどループが増えます。曲線を1周すると波形の1周期です。モノラル音声は解析信号（x + i·ヒルベルト変換 x）を使います。",
     audioMicFail: "マイクを使用できません",
+    audioMicErr: {"denied": "マイクの許可がブロックされています。アドレスバー（またはシステム設定）で許可してから再試行してください。", "unsupported": "このブラウザはマイクを使えません。アプリ内ブラウザ（LINE など）では使えないことが多いので、Safari か Chrome で開いてください。", "insecure": "マイクには HTTPS のページが必要です。", "nodevice": "マイクが見つかりません。", "busy": "マイクは他のアプリで使用中です。"},
     audioFail: "このファイルをデコードできません",
     audioEmpty: "音を出すか、音声ファイルをドロップ",
     dropAudio: "音声ファイルをドロップ",
@@ -957,6 +960,7 @@ const I18N = {
     audioMelody: "la mélodie s'affiche ici",
     audioHint: "Un son pur dessine un cercle ; un timbre plus riche ajoute des boucles. Un tour de la courbe est une période de l'onde. L'audio mono utilise le signal analytique (x + i·Hilbert x).",
     audioMicFail: "Micro indisponible",
+    audioMicErr: {"denied": "L'accès au micro est bloqué. Autorisez-le dans la barre d'adresse (ou les réglages système) puis réessayez.", "unsupported": "Ce navigateur n'a pas accès au micro. Les navigateurs intégrés aux apps ne le permettent souvent pas : ouvrez la page dans Safari ou Chrome.", "insecure": "Le micro nécessite une page HTTPS.", "nodevice": "Aucun micro trouvé.", "busy": "Le micro est utilisé par une autre application."},
     audioFail: "Impossible de décoder ce fichier",
     audioEmpty: "Chantez une note ou déposez un fichier audio",
     dropAudio: "Déposez un fichier audio",
@@ -1069,6 +1073,7 @@ const I18N = {
     audioMelody: "la melodía aparece aquí",
     audioHint: "Un tono puro dibuja un círculo; un timbre más rico añade bucles. Una vuelta a la curva es un periodo de la onda. El audio mono usa la señal analítica (x + i·Hilbert x).",
     audioMicFail: "Micrófono no disponible",
+    audioMicErr: {"denied": "El permiso del micrófono está bloqueado. Permítelo en la barra de direcciones (o en los ajustes del sistema) y vuelve a intentarlo.", "unsupported": "Este navegador no puede usar el micrófono. Los navegadores integrados en apps a menudo no pueden: abre la página en Safari o Chrome.", "insecure": "El micrófono necesita una página HTTPS.", "nodevice": "No se encontró ningún micrófono.", "busy": "Otra aplicación está usando el micrófono."},
     audioFail: "No se pudo decodificar el archivo",
     audioEmpty: "Canta una nota o suelta un archivo de audio",
     dropAudio: "Suelta un archivo de audio",
@@ -2710,9 +2715,18 @@ class AudioInput {
   async startMic() {
     this.stopFile();
     await this.ctx.resume();
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-    });
+    if (!window.isSecureContext) throw Object.assign(new Error('insecure'), { name: 'InsecureContext' });
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw Object.assign(new Error('unsupported'), { name: 'Unsupported' });
+    }
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+    } catch (e) {
+      if (e.name !== 'OverconstrainedError' && e.name !== 'TypeError') throw e;
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
     this.micSrc = this.ctx.createMediaStreamSource(this.stream);
     this.micSrc.connect(this.input);
     this.kind = 'mic';
@@ -3196,7 +3210,7 @@ function App() {
   const [audioK, setAudioK] = useState(16);
   const [audioStereo, setAudioStereo] = useState(false);
   const [audioBusy, setAudioBusy] = useState(false);
-  const [audioError, setAudioError] = useState(null);      // 'mic' | 'decode'
+  const [audioError, setAudioError] = useState(null);      // 'decode' | { mic: reason, detail }
   const audioFileRef = useRef(null);
 
   const ensureAudio = () => {
@@ -3218,7 +3232,10 @@ function App() {
       setAudioPlaying(false);
       setAudioError(null);
     } catch (e) {
-      setAudioError('mic');
+      const kind = { InsecureContext: 'insecure', Unsupported: 'unsupported', NotAllowedError: 'denied',
+        SecurityError: 'denied', PermissionDeniedError: 'denied', NotFoundError: 'nodevice',
+        DevicesNotFoundError: 'nodevice', NotReadableError: 'busy', TrackStartError: 'busy', AbortError: 'busy' }[e && e.name];
+      setAudioError(kind ? { mic: kind } : { mic: null, detail: (e && (e.name || e.message)) || '' });
     }
   };
 
@@ -3719,7 +3736,8 @@ function App() {
           </div>
           {audioBusy && <span style={{ fontSize: 11, color: theme.muted }}>{tr.processing}</span>}
           {audioError && !audioBusy && (
-            <span style={{ fontSize: 11, color: theme.accent }}>{audioError === 'mic' ? tr.audioMicFail : tr.audioFail}</span>
+            <span style={{ fontSize: 11, color: theme.accent }}>{audioError === 'decode' ? tr.audioFail
+              : audioError.mic ? tr.audioMicErr[audioError.mic] : `${tr.audioMicFail} (${audioError.detail})`}</span>
           )}
           {audioSource === 'file' && audioIn && audioIn.buffer && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
