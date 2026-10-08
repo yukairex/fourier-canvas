@@ -608,21 +608,31 @@ const I18N = {
     ellipseCount: (n) => `3D · ${n} ellipse${n === 1 ? '' : 's'}`,
     imageTab: "Image",
     audioTab: "Listen",
-    taglineAudio: "Sing, whistle or play into the mic, or load a melody. An FFT finds the pitch of each moment; its harmonics become epicycles, so every note draws the shape of its own timbre.",
+    taglineAudio: "Load a clip or record one. It is resampled at the rate you pick, cut into FFT frames, and the harmonic spectra of all frames are averaged into one spectrum, which draws one image.",
     audioSource: "Audio in",
-    audioMic: "Microphone",
-    audioMicStop: "Stop mic",
     audioUpload: "Load audio",
     audioStereo: "Stereo as X/Y (L → x, R → y)",
     audioHarmonics: "Harmonics",
-    audioListening: "tracking",
-    audioNoPitch: "no pitch",
-    audioMelody: "melody appears here",
-    audioHint: "A pure tone draws a circle; richer timbres add loops. One trip around the curve is one period of the wave. Mono audio uses the analytic signal (x + i·Hilbert x).",
+    audioHint: "Each pitched frame gives the harmonics of its own pitch. They are phase-aligned and averaged, with louder frames counting more. Complex averaging keeps only the timbre that stays consistent; magnitude averaging keeps all the energy. A pure tone gives a circle.",
     audioMicFail: "Microphone unavailable",
     audioMicErr: {"denied": "Microphone permission was blocked. Allow it in the address bar (or system settings) and try again.", "unsupported": "This browser can't access the microphone. In-app browsers (WeChat, etc.) often can't; open the page in Safari or Chrome.", "insecure": "The microphone needs an HTTPS page.", "nodevice": "No microphone found.", "busy": "The microphone is in use by another app."},
     audioFail: "Couldn't decode that file",
-    audioEmpty: "Sing a note or drop an audio file",
+    audioRecord: "Record",
+    audioRecStop: "Stop & draw",
+    audioRecordingName: "Recording",
+    audioAnalysis: "Sampling & averaging",
+    audioRate: "Sample rate",
+    audioRateOrig: "original",
+    audioFrame: "FFT frame (samples)",
+    audioAvg: "Frequency-domain average",
+    audioAvgComplex: "Complex (keeps phase)",
+    audioAvgMag: "Magnitude",
+    audioSpectrum: "avg spectrum",
+    audioHarmBars: "avg harmonics",
+    audioPitchTrack: "pitch",
+    audioNoVoiced: "No pitched sound found in this clip",
+    audioStats: (v, n) => `${v} / ${n} frames pitched`,
+    audioEmpty: "Record or drop an audio clip",
     dropAudio: "Drop an audio file",
     myImage: "My image",
     image: "Image → epicycles",
@@ -722,21 +732,31 @@ const I18N = {
     ellipseCount: (n) => `3D · ${n} 个椭圆`,
     imageTab: "图片",
     audioTab: "聆听",
-    taglineAudio: "对着麦克风唱、吹口哨或演奏，或者上传一段旋律。FFT 找出每一刻的音高，它的各次谐波变成一串圆周——每个音都画出自己音色的形状。",
+    taglineAudio: "上传或录制一段音频。按你选的采样率重新采样，切成 FFT 帧，再把所有帧的谐波频谱做频域平均，得到一个频谱，画出一张图。",
     audioSource: "音频输入",
-    audioMic: "麦克风",
-    audioMicStop: "关闭麦克风",
     audioUpload: "上传音频",
     audioStereo: "立体声作 X/Y（左 → x，右 → y）",
     audioHarmonics: "谐波数",
-    audioListening: "追踪中",
-    audioNoPitch: "无音高",
-    audioMelody: "旋律会显示在这里",
-    audioHint: "纯音画出一个圆；音色越丰富，圈越多。沿曲线走一圈就是波形的一个周期。单声道音频使用解析信号（x + i·希尔伯特变换 x）。",
+    audioHint: "每个有音高的帧都会给出自己音高的各次谐波。这些谐波经过相位对齐后取平均，声音越响的帧权重越大。复数平均只保留整段里一致的音色，幅度平均保留全部能量。纯音会画出一个圆。",
     audioMicFail: "无法使用麦克风",
     audioMicErr: {"denied": "麦克风权限被拒绝。请在地址栏（或系统设置）里允许后再试。", "unsupported": "这个浏览器无法使用麦克风。微信等 App 内置浏览器通常不支持，请用 Safari 或 Chrome 打开。", "insecure": "麦克风需要 HTTPS 页面。", "nodevice": "没有找到麦克风。", "busy": "麦克风正被其他应用占用。"},
     audioFail: "无法解码该文件",
-    audioEmpty: "唱一个音，或拖入一段音频",
+    audioRecord: "录音",
+    audioRecStop: "停止并绘制",
+    audioRecordingName: "录音",
+    audioAnalysis: "采样与平均",
+    audioRate: "采样率",
+    audioRateOrig: "原始",
+    audioFrame: "FFT 帧长（采样点）",
+    audioAvg: "频域平均方式",
+    audioAvgComplex: "复数平均（保留相位）",
+    audioAvgMag: "幅度平均",
+    audioSpectrum: "平均频谱",
+    audioHarmBars: "平均谐波",
+    audioPitchTrack: "音高",
+    audioNoVoiced: "这段音频里没有检测到有音高的声音",
+    audioStats: (v, n) => `${v} / ${n} 帧有音高`,
+    audioEmpty: "录一段音，或拖入音频文件",
     dropAudio: "拖入音频文件",
     myImage: "我的图片",
     image: "图片 → 圆周",
@@ -835,21 +855,31 @@ const I18N = {
     ellipseCount: (n) => `3D · 楕円 ${n} 個`,
     imageTab: "画像",
     audioTab: "聴く",
-    taglineAudio: "マイクに向かって歌う・口笛を吹く・演奏する、またはメロディを読み込みます。FFT で各瞬間の音高を求め、その倍音が周転円になります。どの音も自分の音色の形を描きます。",
+    taglineAudio: "音声を読み込むか録音します。選んだサンプリング周波数でリサンプリングし、FFT フレームに分割して、全フレームの倍音スペクトルを周波数領域で平均します。得られた1つのスペクトルが1枚の図形を描きます。",
     audioSource: "音声入力",
-    audioMic: "マイク",
-    audioMicStop: "マイク停止",
     audioUpload: "音声を読み込む",
     audioStereo: "ステレオを X/Y に（L → x、R → y）",
     audioHarmonics: "倍音数",
-    audioListening: "追跡中",
-    audioNoPitch: "音高なし",
-    audioMelody: "ここにメロディが表示されます",
-    audioHint: "純音は円を描き、音色が豊かになるほどループが増えます。曲線を1周すると波形の1周期です。モノラル音声は解析信号（x + i·ヒルベルト変換 x）を使います。",
+    audioHint: "音高のある各フレームから、その音高の倍音を求めます。位相をそろえてから平均し、音の大きいフレームほど重みが大きくなります。複素平均はクリップ全体で一貫した音色だけを残し、振幅平均はすべてのエネルギーを残します。純音は円になります。",
     audioMicFail: "マイクを使用できません",
     audioMicErr: {"denied": "マイクの許可がブロックされています。アドレスバー（またはシステム設定）で許可してから再試行してください。", "unsupported": "このブラウザはマイクを使えません。アプリ内ブラウザ（LINE など）では使えないことが多いので、Safari か Chrome で開いてください。", "insecure": "マイクには HTTPS のページが必要です。", "nodevice": "マイクが見つかりません。", "busy": "マイクは他のアプリで使用中です。"},
     audioFail: "このファイルをデコードできません",
-    audioEmpty: "音を出すか、音声ファイルをドロップ",
+    audioRecord: "録音",
+    audioRecStop: "停止して描画",
+    audioRecordingName: "録音",
+    audioAnalysis: "サンプリングと平均",
+    audioRate: "サンプリング周波数",
+    audioRateOrig: "元の値",
+    audioFrame: "FFT フレーム長（サンプル）",
+    audioAvg: "周波数領域の平均",
+    audioAvgComplex: "複素平均（位相を保持）",
+    audioAvgMag: "振幅平均",
+    audioSpectrum: "平均スペクトル",
+    audioHarmBars: "平均倍音",
+    audioPitchTrack: "音高",
+    audioNoVoiced: "このクリップには音高のある音が見つかりません",
+    audioStats: (v, n) => `${v} / ${n} フレームに音高`,
+    audioEmpty: "録音するか、音声ファイルをドロップ",
     dropAudio: "音声ファイルをドロップ",
     myImage: "自分の画像",
     image: "画像 → 周転円",
@@ -948,21 +978,31 @@ const I18N = {
     ellipseCount: (n) => `3D · ${n} ellipse${n === 1 ? '' : 's'}`,
     imageTab: "Image",
     audioTab: "Écoute",
-    taglineAudio: "Chantez, sifflez ou jouez dans le micro, ou chargez une mélodie. Une FFT trouve la hauteur de chaque instant ; ses harmoniques deviennent des épicycles, et chaque note dessine la forme de son timbre.",
+    taglineAudio: "Chargez ou enregistrez un extrait. Il est rééchantillonné à la fréquence choisie, découpé en trames FFT, et les spectres harmoniques de toutes les trames sont moyennés en un seul spectre, qui dessine une seule image.",
     audioSource: "Entrée audio",
-    audioMic: "Micro",
-    audioMicStop: "Couper le micro",
     audioUpload: "Charger un son",
     audioStereo: "Stéréo en X/Y (G → x, D → y)",
     audioHarmonics: "Harmoniques",
-    audioListening: "suivi",
-    audioNoPitch: "pas de hauteur",
-    audioMelody: "la mélodie s'affiche ici",
-    audioHint: "Un son pur dessine un cercle ; un timbre plus riche ajoute des boucles. Un tour de la courbe est une période de l'onde. L'audio mono utilise le signal analytique (x + i·Hilbert x).",
+    audioHint: "Chaque trame dotée d'une hauteur donne les harmoniques de cette hauteur. Elles sont alignées en phase puis moyennées, les trames plus fortes comptant davantage. La moyenne complexe ne garde que le timbre constant ; la moyenne des amplitudes garde toute l'énergie. Un son pur donne un cercle.",
     audioMicFail: "Micro indisponible",
     audioMicErr: {"denied": "L'accès au micro est bloqué. Autorisez-le dans la barre d'adresse (ou les réglages système) puis réessayez.", "unsupported": "Ce navigateur n'a pas accès au micro. Les navigateurs intégrés aux apps ne le permettent souvent pas : ouvrez la page dans Safari ou Chrome.", "insecure": "Le micro nécessite une page HTTPS.", "nodevice": "Aucun micro trouvé.", "busy": "Le micro est utilisé par une autre application."},
     audioFail: "Impossible de décoder ce fichier",
-    audioEmpty: "Chantez une note ou déposez un fichier audio",
+    audioRecord: "Enregistrer",
+    audioRecStop: "Arrêter et dessiner",
+    audioRecordingName: "Enregistrement",
+    audioAnalysis: "Échantillonnage et moyenne",
+    audioRate: "Fréquence d'échantillonnage",
+    audioRateOrig: "d'origine",
+    audioFrame: "Trame FFT (échantillons)",
+    audioAvg: "Moyenne fréquentielle",
+    audioAvgComplex: "Complexe (garde la phase)",
+    audioAvgMag: "Amplitude",
+    audioSpectrum: "spectre moyen",
+    audioHarmBars: "harmoniques moyennes",
+    audioPitchTrack: "hauteur",
+    audioNoVoiced: "Aucun son à hauteur définie dans cet extrait",
+    audioStats: (v, n) => `${v} / ${n} trames avec hauteur`,
+    audioEmpty: "Enregistrez ou déposez un extrait audio",
     dropAudio: "Déposez un fichier audio",
     myImage: "Mon image",
     image: "Image → épicycles",
@@ -1061,21 +1101,31 @@ const I18N = {
     ellipseCount: (n) => `3D · ${n} elipse${n === 1 ? '' : 's'}`,
     imageTab: "Imagen",
     audioTab: "Escuchar",
-    taglineAudio: "Canta, silba o toca frente al micrófono, o carga una melodía. Una FFT encuentra la altura de cada instante; sus armónicos se convierten en epiciclos, y cada nota dibuja la forma de su timbre.",
+    taglineAudio: "Carga o graba un fragmento. Se remuestrea a la frecuencia elegida, se divide en tramas FFT y los espectros armónicos de todas las tramas se promedian en un solo espectro, que dibuja una sola imagen.",
     audioSource: "Entrada de audio",
-    audioMic: "Micrófono",
-    audioMicStop: "Apagar micrófono",
     audioUpload: "Cargar audio",
     audioStereo: "Estéreo como X/Y (I → x, D → y)",
     audioHarmonics: "Armónicos",
-    audioListening: "siguiendo",
-    audioNoPitch: "sin altura",
-    audioMelody: "la melodía aparece aquí",
-    audioHint: "Un tono puro dibuja un círculo; un timbre más rico añade bucles. Una vuelta a la curva es un periodo de la onda. El audio mono usa la señal analítica (x + i·Hilbert x).",
+    audioHint: "Cada trama con altura definida da los armónicos de esa altura. Se alinean en fase y se promedian, y las tramas más fuertes cuentan más. El promedio complejo conserva solo el timbre constante; el de magnitud conserva toda la energía. Un tono puro da un círculo.",
     audioMicFail: "Micrófono no disponible",
     audioMicErr: {"denied": "El permiso del micrófono está bloqueado. Permítelo en la barra de direcciones (o en los ajustes del sistema) y vuelve a intentarlo.", "unsupported": "Este navegador no puede usar el micrófono. Los navegadores integrados en apps a menudo no pueden: abre la página en Safari o Chrome.", "insecure": "El micrófono necesita una página HTTPS.", "nodevice": "No se encontró ningún micrófono.", "busy": "Otra aplicación está usando el micrófono."},
     audioFail: "No se pudo decodificar el archivo",
-    audioEmpty: "Canta una nota o suelta un archivo de audio",
+    audioRecord: "Grabar",
+    audioRecStop: "Parar y dibujar",
+    audioRecordingName: "Grabación",
+    audioAnalysis: "Muestreo y promedio",
+    audioRate: "Frecuencia de muestreo",
+    audioRateOrig: "original",
+    audioFrame: "Trama FFT (muestras)",
+    audioAvg: "Promedio en frecuencia",
+    audioAvgComplex: "Complejo (conserva fase)",
+    audioAvgMag: "Magnitud",
+    audioSpectrum: "espectro medio",
+    audioHarmBars: "armónicos medios",
+    audioPitchTrack: "altura",
+    audioNoVoiced: "No se encontró sonido con altura en este fragmento",
+    audioStats: (v, n) => `${v} / ${n} tramas con altura`,
+    audioEmpty: "Graba o suelta un fragmento de audio",
     dropAudio: "Suelta un archivo de audio",
     myImage: "Mi imagen",
     image: "Imagen → epiciclos",
@@ -1454,7 +1504,7 @@ function FourierCanvas({
   onTimeUpdate,
   traceColor, traceWidth, phaseOffset,
   seekRef, canvasRefOut, isRecording,
-  morph, onMorphUpdate, live,
+  morph, onMorphUpdate,
 }) {
   const canvasRef = React.useRef(null);
   const overlayRef = React.useRef(null);
@@ -1640,7 +1690,7 @@ function FourierCanvas({
     const ctx = c.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    if (!morph && !live && (!coeffs || coeffs.length === 0)) {
+    if (!morph && (!coeffs || coeffs.length === 0)) {
       ctx.clearRect(0, 0, dims.w, dims.h);
       return;
     }
@@ -1668,14 +1718,6 @@ function FourierCanvas({
         morphCurve = [];
         for (let i = 0; i <= 400; i++) morphCurve.push(fourierTip(cs, i / 400, N, phaseOffset || 0));
       }
-      // Live audio: the analyser swaps coefficients every frame; draw the whole loop.
-      if (live) {
-        cs = live.current || [];
-        if (cs.length) {
-          morphCurve = [];
-          for (let i = 0; i <= 600; i++) morphCurve.push(fourierTip(cs, i / 600, N, phaseOffset || 0));
-        }
-      }
 
       const prevT = tRef.current;
       if (playing) tRef.current = (tRef.current + dt * speed) % 1;
@@ -1686,7 +1728,7 @@ function FourierCanvas({
       const tip = tips[tips.length - 1];
 
       // Sub-step the trace so detailed shapes (images) stay smooth at any speed.
-      if (playing && !morph && !live && !(maxAge === Infinity && traceAdvRef.current >= 1)) {
+      if (playing && !morph && !(maxAge === Infinity && traceAdvRef.current >= 1)) {
         const adv = dt * speed;
         const steps = Math.min(64, Math.max(1, Math.ceil(adv * 2000)));
         for (let k = 1; k <= steps; k++) {
@@ -1728,7 +1770,7 @@ function FourierCanvas({
         ctx.moveTo(morphCurve[0].x, morphCurve[0].y);
         for (let i = 1; i < morphCurve.length; i++) ctx.lineTo(morphCurve[i].x, morphCurve[i].y);
         ctx.stroke();
-      } else if (trace.length > 1 && !live) {
+      } else if (trace.length > 1) {
         ctx.lineWidth = tWidth / scale;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -1777,15 +1819,13 @@ function FourierCanvas({
       }
 
       // Tip dot
-      if (tips.length > 1) {
-        ctx.fillStyle = tColor;
-        ctx.beginPath();
-        ctx.arc(tip.x, tip.y, 4 / scale, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = theme.panel;
-        ctx.lineWidth = 1.5 / scale;
-        ctx.stroke();
-      }
+      ctx.fillStyle = tColor;
+      ctx.beginPath();
+      ctx.arc(tip.x, tip.y, 4 / scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = theme.panel;
+      ctx.lineWidth = 1.5 / scale;
+      ctx.stroke();
 
       ctx.restore();
       rafRef.current = requestAnimationFrame(tick);
@@ -1793,7 +1833,7 @@ function FourierCanvas({
 
     rafRef.current = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(rafRef.current); lastTsRef.current = 0; };
-  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording, morph, live]);
+  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording, morph]);
 
   // Unified pointer events: mouse, touch, stylus — with pressure support and pinch-to-zoom
   const canvasToWorld = (cx, cy, pressure = 1) => {
@@ -2465,10 +2505,11 @@ Object.assign(window, { FourierSynth, SoundScope, pitchToMidi, midiToFreq, midiT
 
 </script>
 <script type="text/babel">
-// Listen: the inverse of Sound. Audio from the mic or a file is cut into
-// frames; an FFT autocorrelation finds the pitch f0, and the harmonics at
-// n·f0 become epicycles of frequency n. One loop of the curve is one period
-// of the waveform, so every timbre draws its own closed shape.
+// Listen: the inverse of Sound. A clip (file or recording) is resampled at
+// the chosen rate and cut into Hann-windowed FFT frames. Each pitched frame
+// gives its harmonics at n·f0; these are phase-aligned and averaged over the
+// whole clip in the frequency domain, and the averaged harmonic n becomes an
+// epicycle of frequency n — one clip, one closed shape.
 
 // In-place radix-2 FFT (length must be a power of two).
 function fftInPlace(re, im) {
@@ -2582,170 +2623,183 @@ function harmonicsToCoeffs(hL, hR) {
   return [...map.entries()].map(([freq, c]) => ({ freq, re: c.re, im: c.im }));
 }
 
-// Shift time so the reference harmonic sits at phase 0 (the curve itself is
-// unchanged, but frames line up so the epicycles hold still and can be
-// smoothed), then scale to canvas size.
-function alignAndScale(cs, radius = 200) {
-  let ref = null, total = 0;
+// Shift time so the reference harmonic sits at phase 0. The curve itself is
+// unchanged, but every frame now starts at the same point of its period, so
+// frames can be averaged without their phases cancelling.
+function alignPhase(cs) {
+  let ref = null;
   for (const c of cs) {
     const a = Math.hypot(c.re, c.im);
-    total += a;
     if (c.freq > 0 && (!ref || a > ref.a)) ref = { c, a };
   }
   const fund = cs.find((c) => c.freq === 1);
-  if (fund && Math.hypot(fund.re, fund.im) > 0.25 * (ref ? ref.a : 0)) ref = { c: fund };
-  if (!ref || total < 1e-9) return [];
+  if (fund && ref && Math.hypot(fund.re, fund.im) > 0.25 * ref.a) ref = { c: fund };
+  if (!ref) return cs;
   const theta = Math.atan2(ref.c.im, ref.c.re) / ref.c.freq;
-  const k = radius / total;
   return cs.map((c) => {
     const rot = -c.freq * theta;
     const cr = Math.cos(rot), sn = Math.sin(rot);
-    return { freq: c.freq, re: (c.re * cr - c.im * sn) * k, im: (c.re * sn + c.im * cr) * k };
+    return { freq: c.freq, re: c.re * cr - c.im * sn, im: c.re * sn + c.im * cr };
   });
 }
 
 const freqToMidi = (f) => 69 + 12 * Math.log2(f / 440);
 
-// Frame analyser with smoothing and a pitch history for the melody trail.
-class AudioShapeAnalyser {
-  constructor(size = 4096) {
-    this.size = size;
-    this.win = new Float32Array(size);
-    this.sumW = 0;
-    for (let i = 0; i < size; i++) {
-      this.win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (size - 1));
-      this.sumW += this.win[i];
+// Resample with an OfflineAudioContext (proper anti-aliasing). Falls back to
+// box-filter + linear interpolation where the rate isn't supported.
+async function resampleBuffer(buf, rate) {
+  if (!rate || rate === buf.sampleRate) return buf;
+  const len = Math.max(1, Math.ceil(buf.duration * rate));
+  try {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const off = new OAC(buf.numberOfChannels, len, rate);
+    const src = off.createBufferSource();
+    src.buffer = buf;
+    src.connect(off.destination);
+    src.start();
+    return await off.startRendering();
+  } catch (e) {
+    const ratio = buf.sampleRate / rate, half = Math.max(0, Math.floor(ratio / 2));
+    const chans = [];
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const x = buf.getChannelData(c), y = new Float32Array(len);
+      for (let i = 0; i < len; i++) {
+        const pos = i * ratio, i0 = Math.floor(pos);
+        let sum = 0, n = 0;
+        for (let k = i0 - half; k <= i0 + half; k++) if (k >= 0 && k < x.length) { sum += x[k]; n++; }
+        y[i] = n ? sum / n : 0;
+      }
+      chans.push(y);
     }
-    this.re = new Float64Array(size);
-    this.im = new Float64Array(size);
-    this.spectrum = new Float32Array(size / 2);
-    this.history = [];
-    this.reset();
-  }
-
-  reset() {
-    this.smooth = new Map();
-    this.coeffs = null;
-    this.f0 = 0;
-    this.midi = null;
-    this.history = [];
-  }
-
-  // x: mono frame, L/R: stereo frames (or null). Returns true if the shape changed.
-  process(x, L, R, sr, K, now) {
-    const N = this.size;
-    let rms = 0;
-    for (let i = 0; i < N; i++) rms += x[i] * x[i];
-    rms = Math.sqrt(rms / N);
-    this.rms = rms;
-    this.sr = sr;
-
-    // Magnitude spectrum (dB) for the panel
-    for (let i = 0; i < N; i++) { this.re[i] = x[i] * this.win[i]; this.im[i] = 0; }
-    fftInPlace(this.re, this.im);
-    const norm = 2 / this.sumW;
-    for (let i = 0; i < N / 2; i++) {
-      const mag = Math.hypot(this.re[i], this.im[i]) * norm;
-      this.spectrum[i] = 20 * Math.log10(mag + 1e-9);
-    }
-
-    const pitch = rms > 0.008 ? detectPitch(x, sr) : null;
-    const voiced = pitch && pitch.clarity > 0.6;
-    this.history.push({ time: now, midi: voiced ? freqToMidi(pitch.freq) : null, level: rms });
-    while (this.history.length && now - this.history[0].time > 8) this.history.shift();
-    if (!voiced) { this.voiced = false; return false; }
-    this.voiced = true;
-
-    const f0 = pitch.freq, midi = freqToMidi(f0);
-    const jump = this.midi === null || Math.abs(midi - this.midi) > 0.7;
-    this.f0 = f0; this.midi = midi;
-
-    const hL = harmonicsAt(L || x, this.win, this.sumW, sr, f0, K);
-    const hR = R ? harmonicsAt(R, this.win, this.sumW, sr, f0, K) : null;
-    const fresh = alignAndScale(harmonicsToCoeffs(hL, hR));
-    if (!fresh.length) return false;
-
-    // Exponential smoothing in (aligned) coefficient space; snap on new notes.
-    const alpha = jump ? 0.75 : 0.35;
-    const next = new Map();
-    for (const c of fresh) {
-      const p = this.smooth.get(c.freq) || { re: 0, im: 0 };
-      next.set(c.freq, { re: p.re + (c.re - p.re) * alpha, im: p.im + (c.im - p.im) * alpha });
-    }
-    this.smooth = next;
-    this.coeffs = [...next.entries()]
-      .map(([freq, c]) => ({ freq, re: c.re, im: c.im, amp: Math.hypot(c.re, c.im), phase: Math.atan2(c.im, c.re) }))
-      .sort((a, b) => b.amp - a.amp);
-    return true;
+    return { sampleRate: rate, numberOfChannels: chans.length, length: len, duration: len / rate, getChannelData: (c) => chans[c] };
   }
 }
 
-// Audio plumbing: one context, a mic or file source, and analysers per channel.
+// Whole-clip analysis. Returns the averaged shape plus what the panel shows.
+// method 'complex': average the aligned complex harmonics (keeps phase, so
+//   only the timbre that is consistent across the clip survives);
+// method 'magnitude': average |harmonic| (keeps all energy) with the phase
+//   of the complex average.
+function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY = false } = {}) {
+  const sr = buf.sampleRate, N = fftSize;
+  const pad = (a) => { if (a.length >= N) return a; const b = new Float32Array(N); b.set(a); return b; };
+  const L = pad(buf.getChannelData(0));
+  const R = buf.numberOfChannels > 1 ? pad(buf.getChannelData(1)) : null;
+  let X = L;
+  if (R) { X = new Float32Array(L.length); for (let i = 0; i < L.length; i++) X[i] = 0.5 * (L[i] + R[i]); }
+  const len = X.length;
+
+  const win = new Float32Array(N);
+  let sumW = 0;
+  for (let i = 0; i < N; i++) { win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (N - 1)); sumW += win[i]; }
+
+  // 50% overlap, thinned out for long clips so analysis stays around a second
+  const hop = Math.max(N >> 1, Math.ceil((len - N) / 800));
+  const starts = [];
+  for (let st = 0; st + N <= len; st += hop) starts.push(st);
+  const levels = starts.map((st) => {
+    let e = 0;
+    for (let i = st; i < st + N; i++) e += X[i] * X[i];
+    return Math.sqrt(e / N);
+  });
+  const gate = Math.max(0.003, 0.08 * Math.max(...levels));
+
+  const psd = new Float64Array(N >> 1);
+  const re = new Float64Array(N), im = new Float64Array(N);
+  const acc = new Map();
+  const track = [];
+  let wSum = 0, voiced = 0, loud = 0;
+  const maxF = Math.min(1600, sr / 4);
+
+  starts.forEach((st, fi) => {
+    const t = (st + N / 2) / sr;
+    if (levels[fi] < gate) { track.push({ t, midi: null }); return; }
+    loud++;
+    for (let i = 0; i < N; i++) { re[i] = X[st + i] * win[i]; im[i] = 0; }
+    fftInPlace(re, im);
+    for (let k = 0; k < N >> 1; k++) psd[k] += re[k] * re[k] + im[k] * im[k];
+
+    const frame = X.subarray(st, st + N);
+    const pitch = detectPitch(frame, sr, 55, maxF);
+    if (!pitch || pitch.clarity < 0.6) { track.push({ t, midi: null }); return; }
+    track.push({ t, midi: freqToMidi(pitch.freq) });
+
+    const hL = harmonicsAt(stereoXY && R ? L.subarray(st, st + N) : frame, win, sumW, sr, pitch.freq, K);
+    const hR = stereoXY && R ? harmonicsAt(R.subarray(st, st + N), win, sumW, sr, pitch.freq, K) : null;
+    const cs = alignPhase(harmonicsToCoeffs(hL, hR));
+    let total = 0;
+    for (const c of cs) total += Math.hypot(c.re, c.im);
+    if (total < 1e-9) return;
+    // Each frame's shape is normalised, then weighted by how loud the frame is
+    const w = levels[fi];
+    for (const c of cs) {
+      const a = acc.get(c.freq) || { re: 0, im: 0, mag: 0 };
+      a.re += (w * c.re) / total; a.im += (w * c.im) / total; a.mag += (w * Math.hypot(c.re, c.im)) / total;
+      acc.set(c.freq, a);
+    }
+    wSum += w;
+    voiced++;
+  });
+
+  const norm = 2 / sumW;
+  const spectrum = new Float32Array(N >> 1);
+  for (let k = 0; k < N >> 1; k++) spectrum[k] = 10 * Math.log10((loud ? psd[k] / loud : 0) * norm * norm + 1e-18);
+
+  const midis = track.filter((p) => p.midi !== null).map((p) => p.midi).sort((a, b) => a - b);
+  const info = {
+    sr, fftSize: N, hop, frames: starts.length, voiced, duration: buf.duration, spectrum, track,
+    medianMidi: midis.length ? midis[midis.length >> 1] : null,
+  };
+  if (!voiced) return { ...info, coeffs: null };
+
+  let coeffs = [...acc.entries()].map(([freq, a]) => {
+    const r = a.re / wSum, i = a.im / wSum;
+    const amp = method === 'magnitude' ? a.mag / wSum : Math.hypot(r, i);
+    const phase = Math.atan2(i, r);
+    return { freq, amp, phase };
+  });
+  const total = coeffs.reduce((s2, c) => s2 + c.amp, 0) || 1;
+  const k = 200 / total;
+  coeffs = coeffs.map((c) => {
+    const amp = c.amp * k;
+    return { freq: c.freq, amp, phase: c.phase, re: amp * Math.cos(c.phase), im: amp * Math.sin(c.phase) };
+  }).sort((a, b) => b.amp - a.amp);
+  return { ...info, coeffs };
+}
+
+// Audio plumbing: playback of the (resampled) clip and mic recording.
 class AudioInput {
-  constructor(size = 4096) {
+  constructor() {
     const AC = window.AudioContext || window.webkitAudioContext;
     this.ctx = new AC();
-    this.input = this.ctx.createGain();
-    const split = this.ctx.createChannelSplitter(2);
-    this.anL = this.ctx.createAnalyser();
-    this.anR = this.ctx.createAnalyser();
-    this.anL.fftSize = this.anR.fftSize = size;
-    this.anL.smoothingTimeConstant = this.anR.smoothingTimeConstant = 0;
-    this.input.connect(split);
-    split.connect(this.anL, 0);
-    split.connect(this.anR, 1);
+    this.meter = this.ctx.createAnalyser();
+    this.meter.fftSize = 2048;
     this.out = this.ctx.createGain();
     this.out.connect(this.ctx.destination);
-    this.kind = null;       // 'mic' | 'file'
-    this.buffer = null;     // decoded file
-    this.fileSrc = null;
-    this.offset = 0;        // file position when paused
+    this.buffer = null;
+    this.src = null;
+    this.offset = 0;
     this.startedAt = 0;
     this.playing = false;
     this.onEnded = null;
   }
 
-  get stereo() { return this.kind === 'file' && this.buffer && this.buffer.numberOfChannels > 1; }
   get duration() { return this.buffer ? this.buffer.duration : 0; }
   get position() {
     if (!this.buffer) return 0;
     return this.playing ? Math.min(this.duration, this.ctx.currentTime - this.startedAt) : this.offset;
   }
 
-  async startMic() {
-    this.stopFile();
-    await this.ctx.resume();
-    if (!window.isSecureContext) throw Object.assign(new Error('insecure'), { name: 'InsecureContext' });
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw Object.assign(new Error('unsupported'), { name: 'Unsupported' });
-    }
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-      });
-    } catch (e) {
-      if (e.name !== 'OverconstrainedError' && e.name !== 'TypeError') throw e;
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    }
-    this.micSrc = this.ctx.createMediaStreamSource(this.stream);
-    this.micSrc.connect(this.input);
-    this.kind = 'mic';
+  async decode(blob) {
+    const data = await blob.arrayBuffer();
+    return new Promise((res, rej) => this.ctx.decodeAudioData(data, res, rej));
   }
 
-  stopMic() {
-    if (this.micSrc) this.micSrc.disconnect();
-    if (this.stream) this.stream.getTracks().forEach((t) => t.stop());
-    this.micSrc = this.stream = null;
-    if (this.kind === 'mic') this.kind = null;
-  }
-
-  async loadFile(file) {
-    this.stopMic();
-    this.stopFile();
-    const data = await file.arrayBuffer();
-    this.buffer = await new Promise((res, rej) => this.ctx.decodeAudioData(data, res, rej));
-    this.kind = 'file';
-    this.offset = 0;
+  setBuffer(buf) {
+    const pos = this.position, was = this.playing;
+    this.stopPlayback();
+    this.buffer = buf;
+    if (was) this.play(pos);
   }
 
   play(from = this.offset) {
@@ -2754,24 +2808,23 @@ class AudioInput {
     this.halt();
     const src = this.ctx.createBufferSource();
     src.buffer = this.buffer;
-    src.connect(this.input);
     src.connect(this.out);
     const at = from >= this.duration - 0.05 ? 0 : from;
     src.start(0, at);
     src.onended = () => {
-      if (this.fileSrc !== src) return;
-      this.playing = false; this.offset = 0; this.fileSrc = null;
+      if (this.src !== src) return;
+      this.playing = false; this.offset = 0; this.src = null;
       this.onEnded && this.onEnded();
     };
-    this.fileSrc = src;
+    this.src = src;
     this.startedAt = this.ctx.currentTime - at;
     this.playing = true;
   }
 
   halt() {
-    if (!this.fileSrc) return;
-    const src = this.fileSrc;
-    this.fileSrc = null;
+    if (!this.src) return;
+    const src = this.src;
+    this.src = null;
     try { src.stop(); } catch (e) {}
     src.disconnect();
   }
@@ -2783,140 +2836,185 @@ class AudioInput {
     this.playing = false;
   }
 
-  seek(t) {
-    if (this.playing) this.play(t); else this.offset = t;
+  seek(t) { if (this.playing) this.play(t); else this.offset = t; }
+
+  stopPlayback() { this.halt(); this.playing = false; this.offset = 0; }
+
+  async startRecording() {
+    if (!window.isSecureContext) throw Object.assign(new Error('insecure'), { name: 'InsecureContext' });
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      throw Object.assign(new Error('unsupported'), { name: 'Unsupported' });
+    }
+    this.pause();
+    await this.ctx.resume();
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+    } catch (e) {
+      if (e.name !== 'OverconstrainedError' && e.name !== 'TypeError') throw e;
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    this.micSrc = this.ctx.createMediaStreamSource(this.stream);
+    this.micSrc.connect(this.meter);
+    const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg']
+      .find((m) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m));
+    this.chunks = [];
+    this.recorder = new MediaRecorder(this.stream, mimeType ? { mimeType } : undefined);
+    this.recorder.ondataavailable = (e) => { if (e.data.size) this.chunks.push(e.data); };
+    this.recorder.start(250);
   }
 
-  stopFile() {
-    this.halt();
-    this.playing = false;
-    this.offset = 0;
+  // Resolves with the recorded Blob and releases the mic.
+  stopRecording() {
+    const rec = this.recorder;
+    if (!rec) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      rec.onstop = () => {
+        this.releaseMic();
+        resolve(new Blob(this.chunks, { type: rec.mimeType || 'audio/webm' }));
+      };
+      rec.stop();
+    });
+  }
+
+  releaseMic() {
+    if (this.recorder && this.recorder.state !== 'inactive') { this.recorder.onstop = null; this.recorder.stop(); }
+    if (this.micSrc) this.micSrc.disconnect();
+    if (this.stream) this.stream.getTracks().forEach((t) => t.stop());
+    this.recorder = this.micSrc = this.stream = null;
+  }
+
+  level() {
+    const a = new Float32Array(this.meter.fftSize);
+    this.meter.getFloatTimeDomainData(a);
+    let e = 0;
+    for (let i = 0; i < a.length; i++) e += a[i] * a[i];
+    return Math.sqrt(e / a.length);
   }
 
   dispose() {
-    this.stopMic();
-    this.stopFile();
+    this.releaseMic();
+    this.stopPlayback();
     this.ctx.close();
   }
 }
 
-// Live panel: note name, FFT spectrum with harmonic markers, and the melody
-// as a scrolling pitch trail. Reads the analyser directly every frame.
-function ListenPanel({ analyser, theme, tr, K }) {
+// Result panel: averaged spectrum, averaged harmonics (the shape's recipe)
+// and the pitch track of the whole clip with a playhead.
+function ListenPanel({ result, theme, tr, pos }) {
   const ref = React.useRef(null);
-  const W = 260, H = 210;
+  const W = 260, H = 272;
   React.useEffect(() => {
     const c = ref.current;
-    if (!c || !analyser) return;
+    if (!c || !result) return;
     const dpr = window.devicePixelRatio || 1;
     c.width = W * dpr; c.height = H * dpr;
     const ctx = c.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
     const mono = '"JetBrains Mono", monospace';
-    const fMin = 40, fMax = 8000;
+    const label = (txt, x, y) => { ctx.fillStyle = theme.muted; ctx.font = `9px ${mono}`; ctx.fillText(txt, x, y); };
+
+    // Header
+    ctx.fillStyle = theme.ink;
+    ctx.font = `500 20px ${mono}`;
+    const m = result.medianMidi;
+    ctx.fillText(m !== null ? midiToName(Math.round(m)) : '—', 0, 20);
+    ctx.font = `10px ${mono}`;
+    ctx.fillStyle = theme.muted;
+    if (m !== null) ctx.fillText(`≈ ${midiToFreq(m).toFixed(1)} Hz`, 0, 35);
+    ctx.textAlign = 'right';
+    ctx.fillText(`${(result.sr / 1000).toFixed(result.sr % 1000 ? 2 : 0)} kHz · N ${result.fftSize}`, W, 14);
+    ctx.fillText(`Δf ${(result.sr / result.fftSize).toFixed(1)} Hz`, W, 26);
+    ctx.fillText(tr.audioStats(result.voiced, result.frames), W, 38);
+    ctx.textAlign = 'left';
+
+    // Averaged spectrum (log frequency)
+    const sy = 48, sh = 62;
+    ctx.strokeStyle = theme.grid;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, sy + 0.5, W - 1, sh);
+    const fMin = 40, fMax = result.sr / 2;
     const fx = (f) => (Math.log(f / fMin) / Math.log(fMax / fMin)) * W;
-    let raf;
-    const draw = () => {
-      const a = analyser;
-      ctx.clearRect(0, 0, W, H);
+    const spec = result.spectrum, bins = spec.length, binHz = result.sr / result.fftSize;
+    let top = -200;
+    for (let b = 1; b < bins; b++) top = Math.max(top, spec[b]);
+    ctx.beginPath();
+    ctx.moveTo(0, sy + sh);
+    for (let px = 0; px <= W; px++) {
+      const f0 = fMin * Math.pow(fMax / fMin, px / W), f1 = fMin * Math.pow(fMax / fMin, (px + 1) / W);
+      let peak = -200;
+      for (let b = Math.floor(f0 / binHz); b <= Math.ceil(f1 / binHz) && b < bins; b++) peak = Math.max(peak, spec[b]);
+      const v = Math.max(0, Math.min(1, (peak - top + 70) / 70));
+      ctx.lineTo(px, sy + sh - v * (sh - 4));
+    }
+    ctx.lineTo(W, sy + sh);
+    ctx.closePath();
+    ctx.fillStyle = hexWithAlpha(theme.accent, 0.25);
+    ctx.fill();
+    ctx.strokeStyle = theme.accent;
+    ctx.stroke();
+    label(tr.audioSpectrum, 4, sy + 11);
+    for (const f of [100, 1000, 10000]) if (f < fMax) label(f >= 1000 ? `${f / 1000}k` : `${f}`, fx(f) + 2, sy + sh - 3);
 
-      // Note readout
-      ctx.fillStyle = theme.ink;
-      ctx.font = `500 22px ${mono}`;
-      const named = a.midi !== null && a.f0 ? midiToName(Math.round(a.midi)) : '—';
-      ctx.fillText(named, 0, 22);
-      ctx.font = `10px ${mono}`;
-      ctx.fillStyle = theme.muted;
-      if (a.midi !== null && a.f0) {
-        const cents = Math.round((a.midi - Math.round(a.midi)) * 100);
-        ctx.fillText(`${a.f0.toFixed(1)} Hz  ${cents >= 0 ? '+' : ''}${cents}¢`, 0, 38);
-      }
-      ctx.textAlign = 'right';
-      ctx.fillText(a.voiced ? tr.audioListening : tr.audioNoPitch, W, 22);
-      ctx.textAlign = 'left';
+    // Averaged harmonics
+    const hy = sy + sh + 10, hh = 58;
+    ctx.strokeStyle = theme.grid;
+    ctx.strokeRect(0.5, hy + 0.5, W - 1, hh);
+    const byH = new Map();
+    for (const co of result.coeffs || []) byH.set(Math.abs(co.freq), (byH.get(Math.abs(co.freq)) || 0) + co.amp);
+    const hs = [...byH.keys()].sort((a, b) => a - b);
+    const hMax = Math.max(1e-9, ...byH.values());
+    const n = Math.max(1, hs.length ? hs[hs.length - 1] : 1);
+    const bw = (W - 8) / n;
+    ctx.fillStyle = theme.trace;
+    for (const h of hs) {
+      const v = byH.get(h) / hMax;
+      ctx.fillRect(4 + (h - 1) * bw + 1, hy + hh - 2 - v * (hh - 16), Math.max(1, bw - 2), v * (hh - 16));
+    }
+    label(tr.audioHarmBars, 4, hy + 11);
 
-      // FFT spectrum
-      const sy = 50, sh = 70;
-      ctx.strokeStyle = theme.grid;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0.5, sy + 0.5, W - 1, sh);
-      if (a.sr) {
-        const bins = a.spectrum.length, binHz = a.sr / (bins * 2);
-        ctx.beginPath();
-        ctx.moveTo(0, sy + sh);
-        for (let px = 0; px <= W; px++) {
-          const f0 = fMin * Math.pow(fMax / fMin, px / W), f1 = fMin * Math.pow(fMax / fMin, (px + 1) / W);
-          let peak = -200;
-          for (let b = Math.floor(f0 / binHz); b <= Math.ceil(f1 / binHz) && b < bins; b++) peak = Math.max(peak, a.spectrum[b]);
-          const v = Math.max(0, Math.min(1, (peak + 90) / 80));
-          ctx.lineTo(px, sy + sh - v * sh);
-        }
-        ctx.lineTo(W, sy + sh);
-        ctx.closePath();
-        ctx.fillStyle = hexWithAlpha(theme.accent, 0.25);
-        ctx.fill();
-        ctx.strokeStyle = theme.accent;
-        ctx.stroke();
-        if (a.voiced) {
-          ctx.strokeStyle = theme.ink;
-          ctx.globalAlpha = 0.5;
-          ctx.setLineDash([2, 3]);
-          for (let h = 1; h <= K && h * a.f0 < fMax; h++) {
-            const x = fx(h * a.f0) + 0.5;
-            ctx.beginPath(); ctx.moveTo(x, sy); ctx.lineTo(x, sy + sh); ctx.stroke();
-          }
-          ctx.setLineDash([]);
-          ctx.globalAlpha = 1;
-        }
+    // Pitch track over the clip
+    const py = hy + hh + 10, ph = H - py - 1;
+    ctx.strokeStyle = theme.grid;
+    ctx.strokeRect(0.5, py + 0.5, W - 1, ph);
+    const notes = result.track.filter((p) => p.midi !== null).map((p) => p.midi);
+    label(tr.audioPitchTrack, 4, py + 11);
+    if (notes.length) {
+      let lo = Math.floor(Math.min(...notes)) - 2, hi = Math.ceil(Math.max(...notes)) + 2;
+      if (hi - lo < 12) { const mid = (hi + lo) / 2; lo = mid - 6; hi = mid + 6; }
+      const dur = Math.max(1e-3, result.duration);
+      const xOf = (t) => (t / dur) * W;
+      const yOf = (mm) => py + ph - 4 - ((mm - lo) / (hi - lo)) * (ph - 18);
+      for (let mm = Math.ceil(lo); mm <= hi; mm++) {
+        if (mm % 12 !== 0) continue;
+        ctx.fillStyle = theme.grid;
+        ctx.fillRect(0, Math.round(yOf(mm)) + 0.5, W, 1);
+        label(midiToName(mm), W - 22, yOf(mm) - 2);
       }
-      ctx.fillStyle = theme.muted;
-      ctx.font = `9px ${mono}`;
-      for (const f of [100, 1000]) ctx.fillText(f >= 1000 ? '1k' : `${f}`, fx(f) + 2, sy + sh - 3);
-      ctx.fillText('FFT', 3, sy + 10);
-
-      // Melody trail: last 8 s of pitch, newest at the right
-      const py = 136, ph = H - py;
-      ctx.strokeStyle = theme.grid;
-      ctx.strokeRect(0.5, py + 0.5, W - 1, ph - 1);
-      const hist = a.history;
-      const notes = hist.filter((p) => p.midi !== null).map((p) => p.midi);
-      if (notes.length) {
-        let lo = Math.floor(Math.min(...notes)) - 2, hi = Math.ceil(Math.max(...notes)) + 2;
-        if (hi - lo < 12) { const mid = (hi + lo) / 2; lo = mid - 6; hi = mid + 6; }
-        const now = hist[hist.length - 1].time;
-        const xOf = (t) => W - ((now - t) / 8) * W;
-        const yOf = (m) => py + ph - 4 - ((m - lo) / (hi - lo)) * (ph - 8);
-        // semitone guides at C's
-        ctx.fillStyle = theme.muted;
-        for (let m = Math.ceil(lo); m <= hi; m++) {
-          if (m % 12 !== 0) continue;
-          ctx.fillRect(0, Math.round(yOf(m)) + 0.5, W, 1);
-          ctx.fillText(midiToName(m), 3, yOf(m) - 2);
+      ctx.strokeStyle = theme.trace;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      let pen = false, prev = null;
+      for (const p of result.track) {
+        if (p.midi === null || (prev !== null && Math.abs(p.midi - prev) > 1.5)) pen = false;
+        if (p.midi !== null) {
+          const x = xOf(p.t), y = yOf(p.midi);
+          if (pen) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+          pen = true;
         }
-        ctx.strokeStyle = theme.trace;
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        let pen = false, prev = null;
-        for (const p of hist) {
-          if (p.midi === null || (prev !== null && Math.abs(p.midi - prev) > 1.5)) pen = false;
-          if (p.midi !== null) {
-            const x = xOf(p.time), y = yOf(p.midi);
-            if (pen) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-            pen = true;
-          }
-          prev = p.midi;
-        }
-        ctx.stroke();
-      } else {
-        ctx.fillStyle = theme.muted;
-        ctx.fillText(tr.audioMelody, 4, py + 13);
+        prev = p.midi;
       }
-      raf = requestAnimationFrame(draw);
-    };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
-  }, [analyser, theme, tr, K]);
+      ctx.stroke();
+      if (pos > 0) {
+        ctx.fillStyle = theme.accent;
+        ctx.fillRect(Math.round(xOf(pos)), py + 1, 1.5, ph - 1);
+      }
+    }
+  }, [result, theme, tr, pos]);
+  if (!result) return null;
   return (
     <div style={{
       background: theme.panel, border: `1px solid ${theme.line}`, borderRadius: 8,
@@ -2927,7 +3025,7 @@ function ListenPanel({ analyser, theme, tr, K }) {
   );
 }
 
-Object.assign(window, { fftInPlace, detectPitch, harmonicsAt, harmonicsToCoeffs, alignAndScale, AudioShapeAnalyser, AudioInput, ListenPanel });
+Object.assign(window, { fftInPlace, detectPitch, harmonicsAt, harmonicsToCoeffs, alignPhase, resampleBuffer, analyzeClip, AudioInput, ListenPanel });
 
 </script>
 <script type="text/babel">
@@ -3198,110 +3296,134 @@ function App() {
     [mode, terms3d, N3, view3d],
   );
 
-  // Listen: mic or audio file → pitch → harmonics → epicycles
-  const [audioIn, setAudioIn] = useState(null);           // AudioInput, created on first use
-  const analyser = useMemo(() => new AudioShapeAnalyser(), []);
-  const liveRef = useRef(null);                            // per-frame coefficients for the canvas
-  const [audioCoeffs, setAudioCoeffs] = useState(null);    // throttled snapshot for export / math panel
-  const [audioSource, setAudioSource] = useState(null);    // 'mic' | 'file' | null
+  // Listen: a clip (file or recording) → resample → FFT frames → averaged
+  // harmonics → one shape
+  const [audioIn, setAudioIn] = useState(null);            // AudioInput, created on first use
+  const [clip, setClip] = useState(null);                  // decoded AudioBuffer at its native rate
   const [audioName, setAudioName] = useState('');
-  const [audioPlaying, setAudioPlaying] = useState(false);
-  const [audioPos, setAudioPos] = useState(0);
+  const [audioRate, setAudioRate] = useState(22050);       // 0 = original rate
+  const [audioFFT, setAudioFFT] = useState(4096);
   const [audioK, setAudioK] = useState(16);
+  const [audioAvg, setAudioAvg] = useState('complex');     // 'complex' | 'magnitude'
   const [audioStereo, setAudioStereo] = useState(false);
+  const [audioResult, setAudioResult] = useState(null);
+  const audioCoeffs = audioResult ? audioResult.coeffs : null;
+  // The finished image, shown as the source path while the epicycles trace it
+  const audioPath = useMemo(() => {
+    if (!audioCoeffs) return null;
+    const pts = [];
+    for (let i = 0; i <= 720; i++) pts.push(fourierTip(audioCoeffs, i / 720, audioCoeffs.length));
+    return pts;
+  }, [audioCoeffs]);
   const [audioBusy, setAudioBusy] = useState(false);
   const [audioError, setAudioError] = useState(null);      // 'decode' | { mic: reason, detail }
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const [audioPos, setAudioPos] = useState(0);
+  const [recInfo, setRecInfo] = useState(null);            // { start, t, level } while recording
   const audioFileRef = useRef(null);
 
   const ensureAudio = () => {
     if (audioIn) return audioIn;
-    const a = new AudioInput(analyser.size);
-    a.onEnded = () => setAudioPlaying(false);
+    const a = new AudioInput();
+    a.onEnded = () => { setAudioPlaying(false); setAudioPos(0); };
     setAudioIn(a);
     return a;
   };
-  const resetListen = () => { analyser.reset(); liveRef.current = null; setAudioCoeffs(null); };
 
-  const toggleMic = async () => {
+  const loadAudioFile = async (file, name = file && file.name) => {
+    if (!file) return;
     const a = ensureAudio();
-    if (audioSource === 'mic') { a.stopMic(); setAudioSource(null); return; }
+    a.ctx.resume(); // inside the gesture, so later playback is allowed
+    setMode('audio');
+    setAudioBusy(true);
     try {
-      await a.startMic();
-      resetListen();
-      setAudioSource('mic');
+      const buf = await a.decode(file);
+      a.stopPlayback();
+      setAudioPlaying(false);
+      setAudioPos(0);
+      setAudioName(name);
+      setAudioError(null);
+      setClip(buf);
+    } catch (e) {
+      setAudioError('decode');
+      setAudioBusy(false);
+    }
+  };
+
+  // Re-analyse whenever the clip or a setting changes.
+  useEffect(() => {
+    if (!clip) return;
+    let cancelled = false;
+    setAudioBusy(true);
+    const id = setTimeout(async () => {
+      const rs = await resampleBuffer(clip, audioRate || clip.sampleRate);
+      if (cancelled) return;
+      const res = analyzeClip(rs, { fftSize: audioFFT, K: audioK, method: audioAvg, stereoXY: audioStereo });
+      if (cancelled) return;
+      // Play back what was analysed, so the chosen sample rate is audible
+      if (audioIn) audioIn.setBuffer(rs instanceof AudioBuffer ? rs : clip);
+      setAudioResult(res);
+      setAudioBusy(false);
+      setPlaying(true);
+    }, 60);
+    return () => { cancelled = true; clearTimeout(id); };
+  }, [clip, audioIn, audioRate, audioFFT, audioK, audioAvg, audioStereo]);
+
+  const micErrorKind = (e) => ({
+    InsecureContext: 'insecure', Unsupported: 'unsupported', NotAllowedError: 'denied',
+    SecurityError: 'denied', PermissionDeniedError: 'denied', NotFoundError: 'nodevice',
+    DevicesNotFoundError: 'nodevice', NotReadableError: 'busy', TrackStartError: 'busy', AbortError: 'busy',
+  }[e && e.name]);
+
+  const toggleRecord = async () => {
+    const a = ensureAudio();
+    if (recInfo) {
+      setRecInfo(null);
+      const blob = await a.stopRecording();
+      if (blob && blob.size) loadAudioFile(blob, `${tr.audioRecordingName} ${new Date().toLocaleTimeString()}`);
+      return;
+    }
+    try {
+      await a.startRecording();
       setAudioPlaying(false);
       setAudioError(null);
+      setRecInfo({ start: performance.now(), t: 0, level: 0 });
     } catch (e) {
-      const kind = { InsecureContext: 'insecure', Unsupported: 'unsupported', NotAllowedError: 'denied',
-        SecurityError: 'denied', PermissionDeniedError: 'denied', NotFoundError: 'nodevice',
-        DevicesNotFoundError: 'nodevice', NotReadableError: 'busy', TrackStartError: 'busy', AbortError: 'busy' }[e && e.name];
+      a.releaseMic();
+      const kind = micErrorKind(e);
       setAudioError(kind ? { mic: kind } : { mic: null, detail: (e && (e.name || e.message)) || '' });
     }
   };
 
-  const loadAudioFile = async (file) => {
-    if (!file) return;
-    const a = ensureAudio();
-    a.ctx.resume(); // inside the gesture, so playback is allowed after decoding
-    setMode('audio');
-    setAudioBusy(true);
-    try {
-      await a.loadFile(file);
-      resetListen();
-      setAudioSource('file');
-      setAudioName(file.name);
-      setAudioPos(0);
-      setAudioError(null);
-      a.play(0);
-      setAudioPlaying(true);
-    } catch (e) {
-      setAudioError('decode');
-    } finally {
-      setAudioBusy(false);
-    }
-  };
+  // Recording clock + level meter
+  const recording_ = !!recInfo;
+  useEffect(() => {
+    if (!recording_ || !audioIn) return;
+    const id = setInterval(() => {
+      setRecInfo((r) => (r ? { ...r, t: (performance.now() - r.start) / 1000, level: audioIn.level() } : r));
+    }, 100);
+    return () => clearInterval(id);
+  }, [recording_, audioIn]);
+
+  // Playhead
+  useEffect(() => {
+    if (!audioPlaying || !audioIn) return;
+    const id = setInterval(() => setAudioPos(audioIn.position), 100);
+    return () => clearInterval(id);
+  }, [audioPlaying, audioIn]);
 
   const toggleAudioPlay = () => {
     if (!audioIn || !audioIn.buffer) return;
     if (audioIn.playing) { audioIn.pause(); setAudioPlaying(false); } else { audioIn.play(); setAudioPlaying(true); }
   };
 
-  // Analysis loop: one frame per animation frame while a source is live.
-  useEffect(() => {
-    if (mode !== 'audio' || !audioIn || !audioSource) return;
-    const a = audioIn, size = a.anL.fftSize;
-    const L = new Float32Array(size), R = new Float32Array(size), X = new Float32Array(size);
-    let raf, lastSnap = 0;
-    const tick = (ts) => {
-      const stereo = a.stereo;
-      a.anL.getFloatTimeDomainData(L);
-      if (stereo) {
-        a.anR.getFloatTimeDomainData(R);
-        for (let i = 0; i < size; i++) X[i] = 0.5 * (L[i] + R[i]);
-      }
-      const xy = stereo && audioStereo;
-      if ((a.kind === 'mic' || a.playing) &&
-          analyser.process(stereo ? X : L, xy ? L : null, xy ? R : null, a.ctx.sampleRate, audioK, ts / 1000)) {
-        liveRef.current = analyser.coeffs;
-      }
-      if (ts - lastSnap > 250) {
-        lastSnap = ts;
-        setAudioCoeffs(analyser.coeffs);
-        if (a.kind === 'file') setAudioPos(a.position);
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [mode, audioIn, audioSource, audioK, audioStereo, analyser]);
-
-  // Leaving the tab: release the mic and pause the file.
+  // Leaving the tab: release the mic and pause playback.
   useEffect(() => {
     if (mode === 'audio' || !audioIn) return;
-    audioIn.stopMic();
+    audioIn.releaseMic();
+    setRecInfo(null);
     audioIn.pause();
     setAudioPlaying(false);
-    setAudioSource((s) => (s === 'mic' ? null : s));
   }, [mode, audioIn]);
   useEffect(() => () => audioIn && audioIn.dispose(), [audioIn]);
 
@@ -3512,7 +3634,7 @@ function App() {
 
   // In studio mode, the active coeffs come from user vectors; maxN is len.
   const activeCoeffs = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : mode === '3d' ? proj3d : mode === 'audio' ? audioCoeffs : coeffs;
-  const activeN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : mode === '3d' ? proj3d.length : mode === 'audio' ? audioK * 2 : N;
+  const activeN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : mode === '3d' ? proj3d.length : mode === 'audio' ? (audioCoeffs || []).length : N;
   const activeSpeed = mode === 'image' ? imageSpeed : speed;
 
   // Sound: the circles sing
@@ -3729,17 +3851,25 @@ function App() {
           <input ref={audioFileRef} type="file" accept="audio/*,video/*" style={{ display: 'none' }}
             onChange={(e) => { loadAudioFile(e.target.files[0]); e.target.value = ''; }} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <Button theme={theme} primary={audioSource !== 'mic'} onClick={toggleMic}>
-              {audioSource === 'mic' ? tr.audioMicStop : tr.audioMic}
+            <Button theme={theme} primary={!clip || !!recInfo} onClick={toggleRecord}>
+              {recInfo ? tr.audioRecStop : tr.audioRecord}
             </Button>
-            <Button theme={theme} onClick={() => audioFileRef.current?.click()}>{tr.audioUpload}</Button>
+            {!recInfo && <Button theme={theme} onClick={() => audioFileRef.current?.click()}>{tr.audioUpload}</Button>}
           </div>
-          {audioBusy && <span style={{ fontSize: 11, color: theme.muted }}>{tr.processing}</span>}
+          {recInfo && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'JetBrains Mono, monospace', fontSize: 11 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#e53e3e', flexShrink: 0 }} />
+              <span style={{ color: theme.ink }}>{fmtTime(recInfo.t)}</span>
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: theme.line, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${Math.min(100, recInfo.level * 400)}%`, background: theme.accent }} />
+              </div>
+            </div>
+          )}
           {audioError && !audioBusy && (
-            <span style={{ fontSize: 11, color: theme.accent }}>{audioError === 'decode' ? tr.audioFail
+            <span style={{ fontSize: 11, color: theme.accent, lineHeight: 1.5 }}>{audioError === 'decode' ? tr.audioFail
               : audioError.mic ? tr.audioMicErr[audioError.mic] : `${tr.audioMicFail} (${audioError.detail})`}</span>
           )}
-          {audioSource === 'file' && audioIn && audioIn.buffer && (
+          {clip && !recInfo && audioIn && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{
                 fontSize: 11, color: theme.ink, fontFamily: 'JetBrains Mono, monospace',
@@ -3747,23 +3877,43 @@ function App() {
               }}>{audioName}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Button theme={theme} small onClick={toggleAudioPlay}>{audioPlaying ? tr.pause : tr.play}</Button>
-                <input type="range" min={0} max={audioIn.duration} step={0.01} value={audioPos}
+                <input type="range" min={0} max={clip.duration} step={0.01} value={audioPos}
                   onChange={(e) => { const v = parseFloat(e.target.value); audioIn.seek(v); setAudioPos(v); }}
                   style={{ flex: 1, minWidth: 0, accentColor: theme.accent }} />
                 <span style={{ fontSize: 10, color: theme.muted, fontFamily: 'JetBrains Mono, monospace' }}>
-                  {fmtTime(audioPos)} / {fmtTime(audioIn.duration)}
+                  {fmtTime(audioPos)} / {fmtTime(clip.duration)}
                 </span>
               </div>
             </div>
           )}
-          {audioSource === 'file' && audioIn && audioIn.stereo && (
+        </section>
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <SectionLabel theme={theme}>{tr.audioAnalysis}</SectionLabel>
+          {[
+            [tr.audioRate, audioRate, setAudioRate,
+              [[8000, '8k'], [11025, '11k'], [16000, '16k'], [22050, '22k'], [44100, '44.1k'], [48000, '48k'],
+               [0, clip ? `${tr.audioRateOrig} · ${(clip.sampleRate / 1000).toFixed(clip.sampleRate % 1000 ? 1 : 0)}k` : tr.audioRateOrig]]],
+            [tr.audioFrame, audioFFT, setAudioFFT, [[1024, '1024'], [2048, '2048'], [4096, '4096'], [8192, '8192']]],
+            [tr.audioAvg, audioAvg, setAudioAvg, [['complex', tr.audioAvgComplex], ['magnitude', tr.audioAvgMag]]],
+          ].map(([label, val, set, opts]) => (
+            <div key={label}>
+              <div style={{ fontSize: 11, color: theme.muted, marginBottom: 6 }}>{label}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {opts.map(([v, l]) => (
+                  <PresetChip key={v} label={l} active={val === v} theme={theme} onClick={() => set(v)} />
+                ))}
+              </div>
+            </div>
+          ))}
+          <Slider label={tr.audioHarmonics} value={audioK} min={1} max={40} step={1} theme={theme}
+            onChange={setAudioK} format={(v) => `${v}`} />
+          {clip && clip.numberOfChannels > 1 && (
             <Toggle label={tr.audioStereo} value={audioStereo} onChange={setAudioStereo} theme={theme} />
           )}
+          {audioBusy && <span style={{ fontSize: 11, color: theme.muted }}>{tr.processing}</span>}
         </section>
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <SectionLabel theme={theme}>{tr.controls}</SectionLabel>
-          <Slider label={tr.audioHarmonics} value={audioK} min={1} max={40} step={1} theme={theme}
-            onChange={setAudioK} format={(v) => `${v}`} />
           <Slider label={tr.speed} value={speed} min={0.02} max={1.5} step={0.01} theme={theme}
             onChange={setSpeed} format={(v) => `${v.toFixed(2)}×`} />
           <div style={{ display: 'flex', gap: 8 }}>
@@ -3878,7 +4028,7 @@ function App() {
         )}
 
         {/* Sound */}
-        {mode !== 'audio' && activeCoeffs && activeCoeffs.length > 0 && (
+        {!(mode === 'audio' && recInfo) && activeCoeffs && activeCoeffs.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <SectionLabel theme={theme}>{tr.sound}</SectionLabel>
           <Toggle label={tr.sing} value={singing} onChange={toggleSing} theme={theme} />
@@ -4104,20 +4254,19 @@ function App() {
         ) : (
         <FourierCanvas
           theme={theme}
-          coeffs={mode === 'morph' || mode === 'audio' ? null : activeCoeffs}
-          userPath={mode === 'draw' ? activePath : mode === 'image' ? imagePath : null}
+          coeffs={mode === 'morph' ? null : activeCoeffs}
+          userPath={mode === 'draw' ? activePath : mode === 'image' ? imagePath : mode === 'audio' ? audioPath : null}
           pathResampled={pathResampled}
           N={activeN}
           speed={activeSpeed}
           playing={playing && !isDrawing}
           showCircles={showCircles}
           showVectors={showVectors}
-          showUserPath={showUserPath && (mode === 'draw' || mode === 'image')}
+          showUserPath={showUserPath && (mode === 'draw' || mode === 'image' || mode === 'audio')}
           trailMode={trailMode}
           canDraw={mode === 'draw'}
           morph={mode === 'morph' ? morphProp : null}
           onMorphUpdate={setMorphLive}
-          live={mode === 'audio' ? liveRef : null}
           onDrawStart={onDrawStart}
           onDrawPoint={onDrawPoint}
           onDrawEnd={onDrawEnd}
@@ -4211,10 +4360,10 @@ function App() {
           </div>
         )}
 
-        {/* Listen panel: note, FFT spectrum, melody trail */}
-        {mode === 'audio' && audioSource && (
+        {/* Listen result: averaged spectrum, harmonics, pitch track */}
+        {mode === 'audio' && audioResult && (
           <div style={{ position: 'absolute', top: 52, left: 20, zIndex: 3 }}>
-            <ListenPanel analyser={analyser} theme={theme} tr={tr} K={audioK} />
+            <ListenPanel result={audioResult} theme={theme} tr={tr} pos={audioPos} />
           </div>
         )}
 
@@ -4229,7 +4378,7 @@ function App() {
               fontFamily: 'Newsreader, Georgia, serif',
               fontSize: 20, fontStyle: 'italic', letterSpacing: -0.2,
             }}>
-              {audioBusy ? tr.processing : tr.audioEmpty}
+              {audioBusy ? tr.processing : recInfo ? tr.audioRecordingName : audioResult ? tr.audioNoVoiced : tr.audioEmpty}
             </div>
           </div>
         )}
