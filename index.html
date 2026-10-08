@@ -596,7 +596,33 @@ const I18N = {
     volume: "Volume",
     soundHint: "Each loop of the curve becomes one period of a stereo waveform: x → left, y → right. More epicycles add brighter overtones. Use headphones.",
     scope: "XY scope · L vs R",
+    tagline3d: "No 3D complex numbers exist, so each axis gets its own Fourier series. Grouped by frequency, every term becomes a tilted ellipse, and the chain of ellipses traces a space curve.",
+    knot: "Torus knot",
+    knotP: "p · turns around the axis",
+    knotQ: "q · turns through the hole",
+    knotHint: "Coprime p, q gives a true knot: 2/3 is the trefoil. It needs only 4 ellipses, at frequencies p, q, p+q and |p−q|.",
+    ellipses: "Ellipses",
+    autoRotate: "Auto-rotate",
+    drag3d: "Drag to rotate · scroll to zoom. Sound plays what this view sees.",
+    tilt: "tilt",
+    ellipseCount: (n) => `3D · ${n} ellipse${n === 1 ? '' : 's'}`,
     imageTab: "Image",
+    audioTab: "Listen",
+    taglineAudio: "Sing, whistle or play into the mic, or load a melody. An FFT finds the pitch of each moment; its harmonics become epicycles, so every note draws the shape of its own timbre.",
+    audioSource: "Audio in",
+    audioMic: "Microphone",
+    audioMicStop: "Stop mic",
+    audioUpload: "Load audio",
+    audioStereo: "Stereo as X/Y (L → x, R → y)",
+    audioHarmonics: "Harmonics",
+    audioListening: "tracking",
+    audioNoPitch: "no pitch",
+    audioMelody: "melody appears here",
+    audioHint: "A pure tone draws a circle; richer timbres add loops. One trip around the curve is one period of the wave. Mono audio uses the analytic signal (x + i·Hilbert x).",
+    audioMicFail: "Microphone unavailable",
+    audioFail: "Couldn't decode that file",
+    audioEmpty: "Sing a note or drop an audio file",
+    dropAudio: "Drop an audio file",
     myImage: "My image",
     image: "Image → epicycles",
     uploadImage: "Upload image",
@@ -683,7 +709,33 @@ const I18N = {
     volume: "音量",
     soundHint: "曲线每转一圈就是立体声波形的一个周期：x → 左声道，y → 右声道。圆圈越多，泛音越明亮。建议戴耳机。",
     scope: "XY 示波器 · 左 vs 右",
+    tagline3d: "三维没有\"复数\"，所以每个坐标轴单独做傅里叶分解。按频率合并后，每一项都是一个倾斜的椭圆，一串椭圆首尾相连画出空间曲线。",
+    knot: "环面纽结",
+    knotP: "p · 绕中轴的圈数",
+    knotQ: "q · 穿过中心孔的圈数",
+    knotHint: "p、q 互质时是真正的纽结：2/3 就是三叶结。它只需要 4 个椭圆，频率分别是 p、q、p+q 和 |p−q|。",
+    ellipses: "椭圆数量",
+    autoRotate: "自动旋转",
+    drag3d: "拖动旋转 · 滚轮缩放。声音播放的是当前视角看到的形状。",
+    tilt: "倾角",
+    ellipseCount: (n) => `3D · ${n} 个椭圆`,
     imageTab: "图片",
+    audioTab: "聆听",
+    taglineAudio: "对着麦克风唱、吹口哨或演奏，或者上传一段旋律。FFT 找出每一刻的音高，它的各次谐波变成一串圆周——每个音都画出自己音色的形状。",
+    audioSource: "音频输入",
+    audioMic: "麦克风",
+    audioMicStop: "关闭麦克风",
+    audioUpload: "上传音频",
+    audioStereo: "立体声作 X/Y（左 → x，右 → y）",
+    audioHarmonics: "谐波数",
+    audioListening: "追踪中",
+    audioNoPitch: "无音高",
+    audioMelody: "旋律会显示在这里",
+    audioHint: "纯音画出一个圆；音色越丰富，圈越多。沿曲线走一圈就是波形的一个周期。单声道音频使用解析信号（x + i·希尔伯特变换 x）。",
+    audioMicFail: "无法使用麦克风",
+    audioFail: "无法解码该文件",
+    audioEmpty: "唱一个音，或拖入一段音频",
+    dropAudio: "拖入音频文件",
     myImage: "我的图片",
     image: "图片 → 圆周",
     uploadImage: "上传图片",
@@ -769,7 +821,33 @@ const I18N = {
     volume: "音量",
     soundHint: "曲線の1周がステレオ波形の1周期になります：x → 左、y → 右。周転円が多いほど倍音が明るくなります。ヘッドホン推奨。",
     scope: "XY スコープ · L vs R",
+    tagline3d: "3次元の複素数は存在しないため、各軸ごとにフーリエ級数を求めます。周波数ごとにまとめると各項は傾いた楕円になり、楕円の連鎖が空間曲線を描きます。",
+    knot: "トーラス結び目",
+    knotP: "p · 軸の周りの回転数",
+    knotQ: "q · 穴をくぐる回数",
+    knotHint: "p と q が互いに素なら本物の結び目になります。2/3 は三葉結び目で、楕円 4 つ（周波数 p、q、p+q、|p−q|）だけで描けます。",
+    ellipses: "楕円の数",
+    autoRotate: "自動回転",
+    drag3d: "ドラッグで回転 · スクロールでズーム。音は今の視点から見た形を再生します。",
+    tilt: "傾き",
+    ellipseCount: (n) => `3D · 楕円 ${n} 個`,
     imageTab: "画像",
+    audioTab: "聴く",
+    taglineAudio: "マイクに向かって歌う・口笛を吹く・演奏する、またはメロディを読み込みます。FFT で各瞬間の音高を求め、その倍音が周転円になります。どの音も自分の音色の形を描きます。",
+    audioSource: "音声入力",
+    audioMic: "マイク",
+    audioMicStop: "マイク停止",
+    audioUpload: "音声を読み込む",
+    audioStereo: "ステレオを X/Y に（L → x、R → y）",
+    audioHarmonics: "倍音数",
+    audioListening: "追跡中",
+    audioNoPitch: "音高なし",
+    audioMelody: "ここにメロディが表示されます",
+    audioHint: "純音は円を描き、音色が豊かになるほどループが増えます。曲線を1周すると波形の1周期です。モノラル音声は解析信号（x + i·ヒルベルト変換 x）を使います。",
+    audioMicFail: "マイクを使用できません",
+    audioFail: "このファイルをデコードできません",
+    audioEmpty: "音を出すか、音声ファイルをドロップ",
+    dropAudio: "音声ファイルをドロップ",
     myImage: "自分の画像",
     image: "画像 → 周転円",
     uploadImage: "画像をアップロード",
@@ -855,7 +933,33 @@ const I18N = {
     volume: "Volume",
     soundHint: "Chaque tour de la courbe devient une période d'une onde stéréo : x → gauche, y → droite. Plus d'épicycles donnent des harmoniques plus brillantes. Utilisez un casque.",
     scope: "Oscilloscope XY · G vs D",
+    tagline3d: "Il n'existe pas de nombres complexes en 3D : chaque axe a sa propre série de Fourier. Regroupé par fréquence, chaque terme devient une ellipse inclinée, et la chaîne d'ellipses trace une courbe dans l'espace.",
+    knot: "Nœud torique",
+    knotP: "p · tours autour de l'axe",
+    knotQ: "q · passages dans le trou",
+    knotHint: "Avec p et q premiers entre eux, on obtient un vrai nœud : 2/3 est le trèfle. Il ne faut que 4 ellipses, aux fréquences p, q, p+q et |p−q|.",
+    ellipses: "Ellipses",
+    autoRotate: "Rotation auto",
+    drag3d: "Glisser pour tourner · molette pour zoomer. Le son joue ce que voit cette vue.",
+    tilt: "incl.",
+    ellipseCount: (n) => `3D · ${n} ellipse${n === 1 ? '' : 's'}`,
     imageTab: "Image",
+    audioTab: "Écoute",
+    taglineAudio: "Chantez, sifflez ou jouez dans le micro, ou chargez une mélodie. Une FFT trouve la hauteur de chaque instant ; ses harmoniques deviennent des épicycles, et chaque note dessine la forme de son timbre.",
+    audioSource: "Entrée audio",
+    audioMic: "Micro",
+    audioMicStop: "Couper le micro",
+    audioUpload: "Charger un son",
+    audioStereo: "Stéréo en X/Y (G → x, D → y)",
+    audioHarmonics: "Harmoniques",
+    audioListening: "suivi",
+    audioNoPitch: "pas de hauteur",
+    audioMelody: "la mélodie s'affiche ici",
+    audioHint: "Un son pur dessine un cercle ; un timbre plus riche ajoute des boucles. Un tour de la courbe est une période de l'onde. L'audio mono utilise le signal analytique (x + i·Hilbert x).",
+    audioMicFail: "Micro indisponible",
+    audioFail: "Impossible de décoder ce fichier",
+    audioEmpty: "Chantez une note ou déposez un fichier audio",
+    dropAudio: "Déposez un fichier audio",
     myImage: "Mon image",
     image: "Image → épicycles",
     uploadImage: "Importer une image",
@@ -941,7 +1045,33 @@ const I18N = {
     volume: "Volumen",
     soundHint: "Cada vuelta de la curva se convierte en un periodo de una onda estéreo: x → izquierda, y → derecha. Más epiciclos añaden armónicos más brillantes. Usa auriculares.",
     scope: "Osciloscopio XY · I vs D",
+    tagline3d: "No existen números complejos en 3D, así que cada eje tiene su propia serie de Fourier. Agrupado por frecuencia, cada término es una elipse inclinada, y la cadena de elipses traza una curva en el espacio.",
+    knot: "Nudo tórico",
+    knotP: "p · vueltas alrededor del eje",
+    knotQ: "q · pasos por el agujero",
+    knotHint: "Con p y q coprimos se obtiene un nudo de verdad: 2/3 es el trébol. Solo necesita 4 elipses, con frecuencias p, q, p+q y |p−q|.",
+    ellipses: "Elipses",
+    autoRotate: "Rotación auto",
+    drag3d: "Arrastra para girar · rueda para zoom. El sonido reproduce lo que ve esta vista.",
+    tilt: "incl.",
+    ellipseCount: (n) => `3D · ${n} elipse${n === 1 ? '' : 's'}`,
     imageTab: "Imagen",
+    audioTab: "Escuchar",
+    taglineAudio: "Canta, silba o toca frente al micrófono, o carga una melodía. Una FFT encuentra la altura de cada instante; sus armónicos se convierten en epiciclos, y cada nota dibuja la forma de su timbre.",
+    audioSource: "Entrada de audio",
+    audioMic: "Micrófono",
+    audioMicStop: "Apagar micrófono",
+    audioUpload: "Cargar audio",
+    audioStereo: "Estéreo como X/Y (I → x, D → y)",
+    audioHarmonics: "Armónicos",
+    audioListening: "siguiendo",
+    audioNoPitch: "sin altura",
+    audioMelody: "la melodía aparece aquí",
+    audioHint: "Un tono puro dibuja un círculo; un timbre más rico añade bucles. Una vuelta a la curva es un periodo de la onda. El audio mono usa la señal analítica (x + i·Hilbert x).",
+    audioMicFail: "Micrófono no disponible",
+    audioFail: "No se pudo decodificar el archivo",
+    audioEmpty: "Canta una nota o suelta un archivo de audio",
+    dropAudio: "Suelta un archivo de audio",
     myImage: "Mi imagen",
     image: "Imagen → epiciclos",
     uploadImage: "Subir imagen",
@@ -1319,7 +1449,7 @@ function FourierCanvas({
   onTimeUpdate,
   traceColor, traceWidth, phaseOffset,
   seekRef, canvasRefOut, isRecording,
-  morph, onMorphUpdate,
+  morph, onMorphUpdate, live,
 }) {
   const canvasRef = React.useRef(null);
   const overlayRef = React.useRef(null);
@@ -1505,7 +1635,7 @@ function FourierCanvas({
     const ctx = c.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    if (!morph && (!coeffs || coeffs.length === 0)) {
+    if (!morph && !live && (!coeffs || coeffs.length === 0)) {
       ctx.clearRect(0, 0, dims.w, dims.h);
       return;
     }
@@ -1533,6 +1663,14 @@ function FourierCanvas({
         morphCurve = [];
         for (let i = 0; i <= 400; i++) morphCurve.push(fourierTip(cs, i / 400, N, phaseOffset || 0));
       }
+      // Live audio: the analyser swaps coefficients every frame; draw the whole loop.
+      if (live) {
+        cs = live.current || [];
+        if (cs.length) {
+          morphCurve = [];
+          for (let i = 0; i <= 600; i++) morphCurve.push(fourierTip(cs, i / 600, N, phaseOffset || 0));
+        }
+      }
 
       const prevT = tRef.current;
       if (playing) tRef.current = (tRef.current + dt * speed) % 1;
@@ -1543,7 +1681,7 @@ function FourierCanvas({
       const tip = tips[tips.length - 1];
 
       // Sub-step the trace so detailed shapes (images) stay smooth at any speed.
-      if (playing && !morph && !(maxAge === Infinity && traceAdvRef.current >= 1)) {
+      if (playing && !morph && !live && !(maxAge === Infinity && traceAdvRef.current >= 1)) {
         const adv = dt * speed;
         const steps = Math.min(64, Math.max(1, Math.ceil(adv * 2000)));
         for (let k = 1; k <= steps; k++) {
@@ -1585,7 +1723,7 @@ function FourierCanvas({
         ctx.moveTo(morphCurve[0].x, morphCurve[0].y);
         for (let i = 1; i < morphCurve.length; i++) ctx.lineTo(morphCurve[i].x, morphCurve[i].y);
         ctx.stroke();
-      } else if (trace.length > 1) {
+      } else if (trace.length > 1 && !live) {
         ctx.lineWidth = tWidth / scale;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -1634,13 +1772,15 @@ function FourierCanvas({
       }
 
       // Tip dot
-      ctx.fillStyle = tColor;
-      ctx.beginPath();
-      ctx.arc(tip.x, tip.y, 4 / scale, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = theme.panel;
-      ctx.lineWidth = 1.5 / scale;
-      ctx.stroke();
+      if (tips.length > 1) {
+        ctx.fillStyle = tColor;
+        ctx.beginPath();
+        ctx.arc(tip.x, tip.y, 4 / scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = theme.panel;
+        ctx.lineWidth = 1.5 / scale;
+        ctx.stroke();
+      }
 
       ctx.restore();
       rafRef.current = requestAnimationFrame(tick);
@@ -1648,7 +1788,7 @@ function FourierCanvas({
 
     rafRef.current = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(rafRef.current); lastTsRef.current = 0; };
-  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording, morph]);
+  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording, morph, live]);
 
   // Unified pointer events: mouse, touch, stylus — with pressure support and pinch-to-zoom
   const canvasToWorld = (cx, cy, pressure = 1) => {
@@ -1786,6 +1926,391 @@ function hexWithAlpha(hex, a) {
 }
 
 Object.assign(window, { FourierCanvas });
+
+</script>
+<script type="text/babel">
+// 3D Fourier: there is no "3D complex number", so each axis gets a real DFT.
+// Grouping the three axes by frequency k gives a(k)·cos + b(k)·sin with a, b in
+// R³ — a tilted ellipse. A chain of these ellipses traces the space curve.
+
+// Space-curve presets, sampled uniformly in the curve parameter (not arc
+// length) so analytic curves keep their sparse spectra — a trefoil is 4 terms.
+const PRESETS_3D = {
+  torus:   { label: 'Torus knot', fn: (t, o) => {
+    const R = 170, r = 70, p = o.p, q = o.q;
+    return { x: (R + r * Math.cos(q * t)) * Math.cos(p * t), y: (R + r * Math.cos(q * t)) * Math.sin(p * t), z: r * Math.sin(q * t) };
+  } },
+  figure8: { label: 'Figure-eight', fn: (t) => {
+    const k = 75;
+    return { x: k * (2 + Math.cos(2 * t)) * Math.cos(3 * t), y: k * (2 + Math.cos(2 * t)) * Math.sin(3 * t), z: k * Math.sin(4 * t) };
+  } },
+  slinky:  { label: 'Slinky', fn: (t) => {
+    const R = 170, r = 60;
+    return { x: (R + r * Math.cos(16 * t)) * Math.cos(t), y: (R + r * Math.cos(16 * t)) * Math.sin(t), z: r * Math.sin(16 * t) };
+  } },
+  tennis:  { label: 'Tennis ball', fn: (t) => {
+    const a = 150, b = 70, c = 2 * Math.sqrt(a * b);
+    return { x: a * Math.cos(t) + b * Math.cos(3 * t), y: a * Math.sin(t) - b * Math.sin(3 * t), z: c * Math.sin(2 * t) };
+  } },
+  viviani: { label: 'Viviani', fn: (t) => {
+    const a = 120;
+    return { x: a * Math.cos(2 * t), y: a * Math.sin(2 * t), z: 2 * a * Math.sin(t) };
+  } },
+  lissajous3d: { label: 'Lissajous 3D', fn: (t) => ({
+    x: 220 * Math.sin(3 * t + Math.PI / 2), y: 220 * Math.sin(2 * t), z: 160 * Math.sin(5 * t + Math.PI / 4),
+  }) },
+};
+
+function sample3d(key, opts, M = 512) {
+  const fn = PRESETS_3D[key].fn;
+  const out = [];
+  for (let i = 0; i < M; i++) out.push(fn((i / M) * Math.PI * 2, opts));
+  return out;
+}
+
+function dft3d(samples) {
+  const M = samples.length;
+  const cosT = new Float64Array(M), sinT = new Float64Array(M);
+  for (let m = 0; m < M; m++) {
+    cosT[m] = Math.cos((2 * Math.PI * m) / M);
+    sinT[m] = Math.sin((2 * Math.PI * m) / M);
+  }
+  let mx = 0, my = 0, mz = 0;
+  for (const p of samples) { mx += p.x; my += p.y; mz += p.z; }
+  mx /= M; my /= M; mz /= M;
+  const P = samples.map((p) => ({ x: p.x - mx, y: p.y - my, z: p.z - mz }));
+  const terms = [];
+  for (let k = 1; k < M / 2; k++) {
+    const a = { x: 0, y: 0, z: 0 }, b = { x: 0, y: 0, z: 0 };
+    let m = 0;
+    for (let n = 0; n < M; n++) {
+      const c = cosT[m], sn = sinT[m], p = P[n];
+      a.x += p.x * c; a.y += p.y * c; a.z += p.z * c;
+      b.x += p.x * sn; b.y += p.y * sn; b.z += p.z * sn;
+      m += k; if (m >= M) m -= M;
+    }
+    for (const v of [a, b]) { v.x *= 2 / M; v.y *= 2 / M; v.z *= 2 / M; }
+    const mag = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z + b.x * b.x + b.y * b.y + b.z * b.z);
+    // tilt: angle between the ellipse's plane normal (a × b) and the z axis
+    const nx = a.y * b.z - a.z * b.y, ny = a.z * b.x - a.x * b.z, nz = a.x * b.y - a.y * b.x;
+    const nl = Math.hypot(nx, ny, nz);
+    const tilt = nl > 1e-9 ? Math.acos(Math.min(1, Math.abs(nz) / nl)) : Math.PI / 2;
+    terms.push({ k, a, b, mag, tilt });
+  }
+  terms.sort((u, v) => v.mag - u.mag);
+  const max = terms[0]?.mag || 1;
+  return terms.filter((t) => t.mag > max * 1e-3).slice(0, 200);
+}
+
+function tip3d(terms, t, K) {
+  let x = 0, y = 0, z = 0;
+  const lim = Math.min(K, terms.length);
+  for (let i = 0; i < lim; i++) {
+    const { k, a, b } = terms[i];
+    const c = Math.cos(2 * Math.PI * k * t), s = Math.sin(2 * Math.PI * k * t);
+    x += a.x * c + b.x * s; y += a.y * c + b.y * s; z += a.z * c + b.z * s;
+  }
+  return { x, y, z };
+}
+
+// Rotation: yaw about world z (up), then pitch about screen x.
+// Result: x → screen right, y → screen down, z → away from the viewer.
+function makeRot(yaw, pitch) {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  return (p) => {
+    const x1 = p.x * cy - p.y * sy, y1 = p.x * sy + p.y * cy;
+    return { x: x1, y: y1 * cp - p.z * sp, z: y1 * sp + p.z * cp };
+  };
+}
+
+// Orthographic projection of the 3D series onto the current view, as 2D
+// complex coefficients — what the sound engine and exports consume.
+function project3dToCoeffs(terms, yaw, pitch) {
+  const rot = makeRot(yaw, pitch);
+  const out = [];
+  for (const { k, a, b } of terms) {
+    const A = rot(a), B = rot(b);
+    // A·cos + B·sin = ½(A − iB)e^{iφ} + ½(A + iB)e^{−iφ}, with A, B as x + iy
+    for (const [freq, re, im] of [[k, (A.x + B.y) / 2, (A.y - B.x) / 2], [-k, (A.x - B.y) / 2, (A.y + B.x) / 2]]) {
+      const amp = Math.hypot(re, im);
+      if (amp > 1e-6) out.push({ freq, re, im, amp, phase: Math.atan2(im, re) });
+    }
+  }
+  return out.sort((u, v) => v.amp - u.amp);
+}
+
+function Fourier3DCanvas({
+  theme, terms, N, speed, playing, showCircles, showVectors, showUserPath, trailMode,
+  traceColor, traceWidth, onTimeUpdate, seekRef, canvasRefOut, isRecording,
+  autoRotate, onViewChange, source,
+}) {
+  const canvasRef = React.useRef(null);
+  const containerRef = React.useRef(null);
+  const [dims, setDims] = React.useState({ w: 800, h: 600 });
+  const viewRef = React.useRef({ yaw: 0.6, pitch: 1.05, zoom: 1 });
+  const dragRef = React.useRef(null);
+  const pointersRef = React.useRef(new Map());
+  const pinchRef = React.useRef(null);
+  const tRef = React.useRef(0);
+  const traceRef = React.useRef([]);
+  const traceAdvRef = React.useRef(0);
+  const lastTsRef = React.useRef(0);
+  const lastViewSentRef = React.useRef(0);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    const ro = new ResizeObserver(() => {
+      const r = el.getBoundingClientRect();
+      setDims({ w: Math.floor(r.width), h: Math.floor(r.height) });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (canvasRefOut) canvasRefOut.current = canvasRef.current;
+    if (seekRef) seekRef.current = (nt) => { tRef.current = nt; traceRef.current = []; traceAdvRef.current = 0; };
+  });
+
+  React.useEffect(() => { traceRef.current = []; traceAdvRef.current = 0; tRef.current = 0; }, [terms]);
+  React.useEffect(() => { traceRef.current = []; traceAdvRef.current = 0; }, [N, trailMode]);
+
+  React.useEffect(() => {
+    const el = canvasRef.current;
+    const onWheel = (e) => {
+      e.preventDefault();
+      const v = viewRef.current;
+      v.zoom = Math.min(6, Math.max(0.2, v.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1)));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Source curve + floor height (for the shadow), recomputed per shape
+  const geom = React.useMemo(() => {
+    if (!terms || !terms.length) return null;
+    const pts = [];
+    for (let i = 0; i <= 360; i++) pts.push(tip3d(terms, i / 360, Infinity));
+    let zMin = Infinity, rMax = 1;
+    for (const p of pts) { zMin = Math.min(zMin, p.z); rMax = Math.max(rMax, Math.hypot(p.x, p.y, p.z)); }
+    return { pts, floor: zMin - 50, rMax };
+  }, [terms]);
+
+  React.useEffect(() => {
+    const c = canvasRef.current;
+    const dpr = window.devicePixelRatio || 1;
+    c.width = dims.w * dpr; c.height = dims.h * dpr;
+    c.style.width = dims.w + 'px'; c.style.height = dims.h + 'px';
+    const ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (!terms || !terms.length || !geom) { ctx.clearRect(0, 0, dims.w, dims.h); return; }
+
+    const maxAge = trailMode === 'infinite' ? Infinity : trailMode === 'long' ? 3.0 : 1.2;
+    const tColor = traceColor || theme.trace;
+    const tWidth = traceWidth || 2.2;
+    let raf;
+
+    const tick = (ts) => {
+      if (!lastTsRef.current) lastTsRef.current = ts;
+      const dt = Math.min((ts - lastTsRef.current) / 1000, 0.05);
+      lastTsRef.current = ts;
+      const v = viewRef.current;
+      if (autoRotate && !dragRef.current && pointersRef.current.size === 0) v.yaw += dt * 0.25;
+      if (onViewChange && ts - lastViewSentRef.current > 100) {
+        lastViewSentRef.current = ts;
+        onViewChange(v.yaw, v.pitch);
+      }
+
+      const prevT = tRef.current;
+      if (playing) tRef.current = (tRef.current + dt * speed) % 1;
+      const t = tRef.current;
+      onTimeUpdate && onTimeUpdate(t);
+
+      if (playing && !(maxAge === Infinity && traceAdvRef.current >= 1)) {
+        const adv = dt * speed;
+        const steps = Math.min(64, Math.max(1, Math.ceil(adv * 1500)));
+        for (let k = 1; k <= steps; k++) {
+          const p = tip3d(terms, (prevT + (adv * k) / steps) % 1, N);
+          traceRef.current.push({ ...p, age: (dt * (steps - k)) / steps });
+          if (maxAge === Infinity && traceAdvRef.current + (adv * k) / steps >= 1) break;
+        }
+        traceAdvRef.current += adv;
+      }
+      for (const p of traceRef.current) p.age += dt;
+      if (maxAge !== Infinity) traceRef.current = traceRef.current.filter((p) => p.age < maxAge);
+
+      // Projection
+      const rot = makeRot(v.yaw, v.pitch);
+      const D = 1600;
+      const S = (Math.min(dims.w, dims.h) / 700) * v.zoom;
+      const cx = dims.w / 2, cy = dims.h / 2 + 20;
+      const proj = (p) => {
+        const r = rot(p);
+        const f = D / (D + r.z);
+        return { X: cx + r.x * f * S, Y: cy + r.y * f * S, d: r.z };
+      };
+      // depth → alpha (near = opaque)
+      const depthAlpha = (d) => Math.max(0.25, Math.min(1, 0.62 - d / (2.2 * geom.rMax)));
+
+      if (isRecording) { ctx.fillStyle = theme.bg; ctx.fillRect(0, 0, dims.w, dims.h); }
+      else ctx.clearRect(0, 0, dims.w, dims.h);
+
+      // Floor grid
+      const fz = geom.floor, G = 300, step = 60;
+      ctx.strokeStyle = theme.gridStrong;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let g = -G; g <= G; g += step) {
+        let a = proj({ x: g, y: -G, z: fz }), b = proj({ x: g, y: G, z: fz });
+        ctx.moveTo(a.X, a.Y); ctx.lineTo(b.X, b.Y);
+        a = proj({ x: -G, y: g, z: fz }); b = proj({ x: G, y: g, z: fz });
+        ctx.moveTo(a.X, a.Y); ctx.lineTo(b.X, b.Y);
+      }
+      ctx.stroke();
+
+      // Shadow of the full curve on the floor
+      ctx.strokeStyle = theme.ghost;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      geom.pts.forEach((p, i) => {
+        const q = proj({ x: p.x, y: p.y, z: fz });
+        if (i === 0) ctx.moveTo(q.X, q.Y); else ctx.lineTo(q.X, q.Y);
+      });
+      ctx.stroke();
+
+      // Source curve (dashed)
+      if (showUserPath) {
+        ctx.strokeStyle = theme.user;
+        ctx.globalAlpha = 0.35;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
+        ctx.beginPath();
+        source.forEach((p, i) => {
+          const q = proj(p);
+          if (i === 0) ctx.moveTo(q.X, q.Y); else ctx.lineTo(q.X, q.Y);
+        });
+        ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+      }
+
+      // Trace, bucketed by depth so we stroke a handful of paths per frame
+      const tr = traceRef.current;
+      if (tr.length > 1) {
+        ctx.lineWidth = tWidth;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        const B = 6;
+        const buckets = Array.from({ length: B }, () => []);
+        let prev = proj(tr[0]);
+        for (let i = 1; i < tr.length; i++) {
+          const cur = proj(tr[i]);
+          let a = depthAlpha((prev.d + cur.d) / 2);
+          if (maxAge !== Infinity) a *= Math.max(0, 1 - tr[i].age / maxAge);
+          if (a > 0.02) buckets[Math.min(B - 1, Math.floor(a * B))].push(prev, cur);
+          prev = cur;
+        }
+        buckets.forEach((segs, bi) => {
+          if (!segs.length) return;
+          ctx.strokeStyle = hexWithAlpha(tColor, (bi + 0.5) / B);
+          ctx.beginPath();
+          for (let i = 0; i < segs.length; i += 2) { ctx.moveTo(segs[i].X, segs[i].Y); ctx.lineTo(segs[i + 1].X, segs[i + 1].Y); }
+          ctx.stroke();
+        });
+      }
+
+      // Ellipse chain
+      const lim = Math.min(N, terms.length);
+      let base = { x: 0, y: 0, z: 0 };
+      const tips = [proj(base)];
+      for (let i = 0; i < lim; i++) {
+        const { k, a, b } = terms[i];
+        if (showCircles) {
+          ctx.strokeStyle = theme.circle;
+          ctx.globalAlpha = Math.max(0.15, 1 - (i / Math.max(6, lim)) * 0.8);
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (let j = 0; j <= 48; j++) {
+            const th = (j / 48) * Math.PI * 2, c = Math.cos(th), s = Math.sin(th);
+            const q = proj({ x: base.x + a.x * c + b.x * s, y: base.y + a.y * c + b.y * s, z: base.z + a.z * c + b.z * s });
+            if (j === 0) ctx.moveTo(q.X, q.Y); else ctx.lineTo(q.X, q.Y);
+          }
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+        const c = Math.cos(2 * Math.PI * k * t), s = Math.sin(2 * Math.PI * k * t);
+        base = { x: base.x + a.x * c + b.x * s, y: base.y + a.y * c + b.y * s, z: base.z + a.z * c + b.z * s };
+        tips.push(proj(base));
+      }
+      if (showVectors) {
+        ctx.strokeStyle = theme.vector;
+        ctx.globalAlpha = 0.9;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        tips.forEach((q, i) => { if (i === 0) ctx.moveTo(q.X, q.Y); else ctx.lineTo(q.X, q.Y); });
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      // Drop line from the tip to its shadow
+      const tipP = tips[tips.length - 1];
+      const sh = proj({ x: base.x, y: base.y, z: fz });
+      ctx.strokeStyle = theme.ghost;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(tipP.X, tipP.Y); ctx.lineTo(sh.X, sh.Y); ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = tColor;
+      ctx.beginPath(); ctx.arc(tipP.X, tipP.Y, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = theme.panel; ctx.lineWidth = 1.5; ctx.stroke();
+
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(raf); lastTsRef.current = 0; };
+  }, [dims, theme, terms, geom, N, speed, playing, showCircles, showVectors, showUserPath, trailMode, traceColor, traceWidth, isRecording, autoRotate, source]);
+
+  // Drag to rotate, wheel / pinch to zoom
+  const onDown = (e) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointersRef.current.size === 2) {
+      const [a, b] = [...pointersRef.current.values()];
+      pinchRef.current = { d: Math.hypot(a.x - b.x, a.y - b.y), zoom: viewRef.current.zoom };
+      dragRef.current = null;
+    } else {
+      dragRef.current = { x: e.clientX, y: e.clientY, yaw: viewRef.current.yaw, pitch: viewRef.current.pitch };
+    }
+  };
+  const onMove = (e) => {
+    if (!pointersRef.current.has(e.pointerId)) return;
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const v = viewRef.current;
+    if (pinchRef.current && pointersRef.current.size >= 2) {
+      const [a, b] = [...pointersRef.current.values()];
+      v.zoom = Math.min(6, Math.max(0.2, pinchRef.current.zoom * Math.hypot(a.x - b.x, a.y - b.y) / pinchRef.current.d));
+    } else if (dragRef.current) {
+      const d = dragRef.current;
+      v.yaw = d.yaw - (e.clientX - d.x) * 0.008;
+      v.pitch = Math.max(-0.2, Math.min(Math.PI / 2, d.pitch + (e.clientY - d.y) * 0.008));
+    }
+  };
+  const onUp = (e) => {
+    pointersRef.current.delete(e.pointerId);
+    if (pointersRef.current.size < 2) pinchRef.current = null;
+    if (pointersRef.current.size === 0) dragRef.current = null;
+  };
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <canvas ref={canvasRef}
+        onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+        style={{ position: 'absolute', inset: 0, cursor: 'grab', touchAction: 'none' }} />
+    </div>
+  );
+}
+
+Object.assign(window, { PRESETS_3D, sample3d, dft3d, tip3d, project3dToCoeffs, Fourier3DCanvas });
 
 </script>
 <script type="text/babel">
@@ -1935,12 +2460,469 @@ Object.assign(window, { FourierSynth, SoundScope, pitchToMidi, midiToFreq, midiT
 
 </script>
 <script type="text/babel">
+// Listen: the inverse of Sound. Audio from the mic or a file is cut into
+// frames; an FFT autocorrelation finds the pitch f0, and the harmonics at
+// n·f0 become epicycles of frequency n. One loop of the curve is one period
+// of the waveform, so every timbre draws its own closed shape.
+
+// In-place radix-2 FFT (length must be a power of two).
+function fftInPlace(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      let tmp = re[i]; re[i] = re[j]; re[j] = tmp;
+      tmp = im[i]; im[i] = im[j]; im[j] = tmp;
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1, ang = (-2 * Math.PI) / len;
+    const wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let k = 0; k < half; k++) {
+        const a = i + k, b = a + half;
+        const tr = re[b] * cr - im[b] * ci, ti = re[b] * ci + im[b] * cr;
+        re[b] = re[a] - tr; im[b] = im[a] - ti;
+        re[a] += tr; im[a] += ti;
+        const nc = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = nc;
+      }
+    }
+  }
+}
+
+// McLeod pitch method: normalized square difference via FFT autocorrelation.
+// Returns { freq, clarity } or null when nothing periodic is found.
+function detectPitch(x, sr, minF = 55, maxF = 1600) {
+  const W = x.length, n = W * 2;
+  const re = new Float64Array(n), im = new Float64Array(n);
+  let mean = 0;
+  for (let i = 0; i < W; i++) mean += x[i];
+  mean /= W;
+  for (let i = 0; i < W; i++) re[i] = x[i] - mean;
+  const sig = re.slice(0, W);
+  fftInPlace(re, im);
+  for (let i = 0; i < n; i++) { re[i] = re[i] * re[i] + im[i] * im[i]; im[i] = 0; }
+  fftInPlace(re, im); // power spectrum is real and even, so a forward FFT inverts it
+  const tauMax = Math.min(W >> 1, Math.ceil(sr / minF));
+  const tauMin = Math.max(2, Math.floor(sr / maxF));
+  const nsdf = new Float64Array(tauMax + 2);
+  let m = 2 * re[0] / n;
+  for (let tau = 0; tau <= tauMax + 1; tau++) {
+    if (tau > 0) m -= sig[tau - 1] * sig[tau - 1] + sig[W - tau] * sig[W - tau];
+    nsdf[tau] = m > 1e-12 ? (2 * re[tau] / n) / m : 0;
+  }
+  // Key maxima: the highest point of each positive lobe after the first dip.
+  const peaks = [];
+  let tau = 1;
+  while (tau < tauMax && nsdf[tau] > 0) tau++;
+  let best = -1;
+  for (; tau <= tauMax; tau++) {
+    if (nsdf[tau] > 0 && nsdf[tau - 1] <= 0) best = tau;
+    else if (nsdf[tau] > 0 && best >= 0 && nsdf[tau] > nsdf[best]) best = tau;
+    if (best >= 0 && (nsdf[tau] <= 0 || tau === tauMax)) {
+      if (best >= tauMin) peaks.push(best);
+      best = -1;
+    }
+  }
+  if (!peaks.length) return null;
+  let top = 0;
+  for (const p of peaks) top = Math.max(top, nsdf[p]);
+  const pick = peaks.find((p) => nsdf[p] >= 0.9 * top);
+  const a = nsdf[pick - 1], b = nsdf[pick], c = nsdf[pick + 1];
+  const den = a - 2 * b + c;
+  const shift = den !== 0 ? (0.5 * (a - c)) / den : 0;
+  return { freq: sr / (pick + shift), clarity: b };
+}
+
+// Complex amplitude of each harmonic h·f0 (h = 1..K) over a Hann window,
+// phases measured from the frame centre: x(t) ≈ Σ Re(c_h e^{i2πh f0 t}).
+function harmonicsAt(x, win, sumW, sr, f0, K) {
+  const N = x.length, mid = N / 2, out = [];
+  for (let h = 1; h <= K; h++) {
+    const w = (2 * Math.PI * h * f0) / sr;
+    if (h * f0 > sr * 0.45) break;
+    const dc = Math.cos(w), ds = Math.sin(w);
+    let cr = Math.cos(-w * mid), ci = Math.sin(-w * mid), re = 0, im = 0;
+    for (let n = 0; n < N; n++) {
+      const v = x[n] * win[n];
+      re += v * cr; im -= v * ci;
+      const nc = cr * dc - ci * ds; ci = cr * ds + ci * dc; cr = nc;
+    }
+    out.push({ h, re: (2 * re) / sumW, im: (2 * im) / sumW });
+  }
+  return out;
+}
+
+// Harmonics → drawing coefficients. Mono uses the analytic signal (x + i·Hx,
+// one circle per harmonic); stereo uses L + i·R, the exact inverse of Sound.
+function harmonicsToCoeffs(hL, hR) {
+  const map = new Map();
+  const add = (freq, re, im) => {
+    const c = map.get(freq) || { re: 0, im: 0 };
+    c.re += re; c.im += im;
+    map.set(freq, c);
+  };
+  if (!hR) {
+    for (const a of hL) add(a.h, a.re, a.im);
+  } else {
+    for (let i = 0; i < hL.length; i++) {
+      const a = hL[i], b = hR[i] || { re: 0, im: 0 };
+      add(a.h, (a.re - b.im) / 2, (a.im + b.re) / 2);    // (a + i·b) / 2
+      add(-a.h, (a.re + b.im) / 2, (-a.im + b.re) / 2);  // (ā + i·b̄) / 2
+    }
+  }
+  return [...map.entries()].map(([freq, c]) => ({ freq, re: c.re, im: c.im }));
+}
+
+// Shift time so the reference harmonic sits at phase 0 (the curve itself is
+// unchanged, but frames line up so the epicycles hold still and can be
+// smoothed), then scale to canvas size.
+function alignAndScale(cs, radius = 200) {
+  let ref = null, total = 0;
+  for (const c of cs) {
+    const a = Math.hypot(c.re, c.im);
+    total += a;
+    if (c.freq > 0 && (!ref || a > ref.a)) ref = { c, a };
+  }
+  const fund = cs.find((c) => c.freq === 1);
+  if (fund && Math.hypot(fund.re, fund.im) > 0.25 * (ref ? ref.a : 0)) ref = { c: fund };
+  if (!ref || total < 1e-9) return [];
+  const theta = Math.atan2(ref.c.im, ref.c.re) / ref.c.freq;
+  const k = radius / total;
+  return cs.map((c) => {
+    const rot = -c.freq * theta;
+    const cr = Math.cos(rot), sn = Math.sin(rot);
+    return { freq: c.freq, re: (c.re * cr - c.im * sn) * k, im: (c.re * sn + c.im * cr) * k };
+  });
+}
+
+const freqToMidi = (f) => 69 + 12 * Math.log2(f / 440);
+
+// Frame analyser with smoothing and a pitch history for the melody trail.
+class AudioShapeAnalyser {
+  constructor(size = 4096) {
+    this.size = size;
+    this.win = new Float32Array(size);
+    this.sumW = 0;
+    for (let i = 0; i < size; i++) {
+      this.win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (size - 1));
+      this.sumW += this.win[i];
+    }
+    this.re = new Float64Array(size);
+    this.im = new Float64Array(size);
+    this.spectrum = new Float32Array(size / 2);
+    this.history = [];
+    this.reset();
+  }
+
+  reset() {
+    this.smooth = new Map();
+    this.coeffs = null;
+    this.f0 = 0;
+    this.midi = null;
+    this.history = [];
+  }
+
+  // x: mono frame, L/R: stereo frames (or null). Returns true if the shape changed.
+  process(x, L, R, sr, K, now) {
+    const N = this.size;
+    let rms = 0;
+    for (let i = 0; i < N; i++) rms += x[i] * x[i];
+    rms = Math.sqrt(rms / N);
+    this.rms = rms;
+    this.sr = sr;
+
+    // Magnitude spectrum (dB) for the panel
+    for (let i = 0; i < N; i++) { this.re[i] = x[i] * this.win[i]; this.im[i] = 0; }
+    fftInPlace(this.re, this.im);
+    const norm = 2 / this.sumW;
+    for (let i = 0; i < N / 2; i++) {
+      const mag = Math.hypot(this.re[i], this.im[i]) * norm;
+      this.spectrum[i] = 20 * Math.log10(mag + 1e-9);
+    }
+
+    const pitch = rms > 0.008 ? detectPitch(x, sr) : null;
+    const voiced = pitch && pitch.clarity > 0.6;
+    this.history.push({ time: now, midi: voiced ? freqToMidi(pitch.freq) : null, level: rms });
+    while (this.history.length && now - this.history[0].time > 8) this.history.shift();
+    if (!voiced) { this.voiced = false; return false; }
+    this.voiced = true;
+
+    const f0 = pitch.freq, midi = freqToMidi(f0);
+    const jump = this.midi === null || Math.abs(midi - this.midi) > 0.7;
+    this.f0 = f0; this.midi = midi;
+
+    const hL = harmonicsAt(L || x, this.win, this.sumW, sr, f0, K);
+    const hR = R ? harmonicsAt(R, this.win, this.sumW, sr, f0, K) : null;
+    const fresh = alignAndScale(harmonicsToCoeffs(hL, hR));
+    if (!fresh.length) return false;
+
+    // Exponential smoothing in (aligned) coefficient space; snap on new notes.
+    const alpha = jump ? 0.75 : 0.35;
+    const next = new Map();
+    for (const c of fresh) {
+      const p = this.smooth.get(c.freq) || { re: 0, im: 0 };
+      next.set(c.freq, { re: p.re + (c.re - p.re) * alpha, im: p.im + (c.im - p.im) * alpha });
+    }
+    this.smooth = next;
+    this.coeffs = [...next.entries()]
+      .map(([freq, c]) => ({ freq, re: c.re, im: c.im, amp: Math.hypot(c.re, c.im), phase: Math.atan2(c.im, c.re) }))
+      .sort((a, b) => b.amp - a.amp);
+    return true;
+  }
+}
+
+// Audio plumbing: one context, a mic or file source, and analysers per channel.
+class AudioInput {
+  constructor(size = 4096) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    this.ctx = new AC();
+    this.input = this.ctx.createGain();
+    const split = this.ctx.createChannelSplitter(2);
+    this.anL = this.ctx.createAnalyser();
+    this.anR = this.ctx.createAnalyser();
+    this.anL.fftSize = this.anR.fftSize = size;
+    this.anL.smoothingTimeConstant = this.anR.smoothingTimeConstant = 0;
+    this.input.connect(split);
+    split.connect(this.anL, 0);
+    split.connect(this.anR, 1);
+    this.out = this.ctx.createGain();
+    this.out.connect(this.ctx.destination);
+    this.kind = null;       // 'mic' | 'file'
+    this.buffer = null;     // decoded file
+    this.fileSrc = null;
+    this.offset = 0;        // file position when paused
+    this.startedAt = 0;
+    this.playing = false;
+    this.onEnded = null;
+  }
+
+  get stereo() { return this.kind === 'file' && this.buffer && this.buffer.numberOfChannels > 1; }
+  get duration() { return this.buffer ? this.buffer.duration : 0; }
+  get position() {
+    if (!this.buffer) return 0;
+    return this.playing ? Math.min(this.duration, this.ctx.currentTime - this.startedAt) : this.offset;
+  }
+
+  async startMic() {
+    this.stopFile();
+    await this.ctx.resume();
+    this.stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    });
+    this.micSrc = this.ctx.createMediaStreamSource(this.stream);
+    this.micSrc.connect(this.input);
+    this.kind = 'mic';
+  }
+
+  stopMic() {
+    if (this.micSrc) this.micSrc.disconnect();
+    if (this.stream) this.stream.getTracks().forEach((t) => t.stop());
+    this.micSrc = this.stream = null;
+    if (this.kind === 'mic') this.kind = null;
+  }
+
+  async loadFile(file) {
+    this.stopMic();
+    this.stopFile();
+    const data = await file.arrayBuffer();
+    this.buffer = await new Promise((res, rej) => this.ctx.decodeAudioData(data, res, rej));
+    this.kind = 'file';
+    this.offset = 0;
+  }
+
+  play(from = this.offset) {
+    if (!this.buffer) return;
+    this.ctx.resume();
+    this.halt();
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.buffer;
+    src.connect(this.input);
+    src.connect(this.out);
+    const at = from >= this.duration - 0.05 ? 0 : from;
+    src.start(0, at);
+    src.onended = () => {
+      if (this.fileSrc !== src) return;
+      this.playing = false; this.offset = 0; this.fileSrc = null;
+      this.onEnded && this.onEnded();
+    };
+    this.fileSrc = src;
+    this.startedAt = this.ctx.currentTime - at;
+    this.playing = true;
+  }
+
+  halt() {
+    if (!this.fileSrc) return;
+    const src = this.fileSrc;
+    this.fileSrc = null;
+    try { src.stop(); } catch (e) {}
+    src.disconnect();
+  }
+
+  pause() {
+    if (!this.playing) return;
+    this.offset = this.position;
+    this.halt();
+    this.playing = false;
+  }
+
+  seek(t) {
+    if (this.playing) this.play(t); else this.offset = t;
+  }
+
+  stopFile() {
+    this.halt();
+    this.playing = false;
+    this.offset = 0;
+  }
+
+  dispose() {
+    this.stopMic();
+    this.stopFile();
+    this.ctx.close();
+  }
+}
+
+// Live panel: note name, FFT spectrum with harmonic markers, and the melody
+// as a scrolling pitch trail. Reads the analyser directly every frame.
+function ListenPanel({ analyser, theme, tr, K }) {
+  const ref = React.useRef(null);
+  const W = 260, H = 210;
+  React.useEffect(() => {
+    const c = ref.current;
+    if (!c || !analyser) return;
+    const dpr = window.devicePixelRatio || 1;
+    c.width = W * dpr; c.height = H * dpr;
+    const ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const mono = '"JetBrains Mono", monospace';
+    const fMin = 40, fMax = 8000;
+    const fx = (f) => (Math.log(f / fMin) / Math.log(fMax / fMin)) * W;
+    let raf;
+    const draw = () => {
+      const a = analyser;
+      ctx.clearRect(0, 0, W, H);
+
+      // Note readout
+      ctx.fillStyle = theme.ink;
+      ctx.font = `500 22px ${mono}`;
+      const named = a.midi !== null && a.f0 ? midiToName(Math.round(a.midi)) : '—';
+      ctx.fillText(named, 0, 22);
+      ctx.font = `10px ${mono}`;
+      ctx.fillStyle = theme.muted;
+      if (a.midi !== null && a.f0) {
+        const cents = Math.round((a.midi - Math.round(a.midi)) * 100);
+        ctx.fillText(`${a.f0.toFixed(1)} Hz  ${cents >= 0 ? '+' : ''}${cents}¢`, 0, 38);
+      }
+      ctx.textAlign = 'right';
+      ctx.fillText(a.voiced ? tr.audioListening : tr.audioNoPitch, W, 22);
+      ctx.textAlign = 'left';
+
+      // FFT spectrum
+      const sy = 50, sh = 70;
+      ctx.strokeStyle = theme.grid;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0.5, sy + 0.5, W - 1, sh);
+      if (a.sr) {
+        const bins = a.spectrum.length, binHz = a.sr / (bins * 2);
+        ctx.beginPath();
+        ctx.moveTo(0, sy + sh);
+        for (let px = 0; px <= W; px++) {
+          const f0 = fMin * Math.pow(fMax / fMin, px / W), f1 = fMin * Math.pow(fMax / fMin, (px + 1) / W);
+          let peak = -200;
+          for (let b = Math.floor(f0 / binHz); b <= Math.ceil(f1 / binHz) && b < bins; b++) peak = Math.max(peak, a.spectrum[b]);
+          const v = Math.max(0, Math.min(1, (peak + 90) / 80));
+          ctx.lineTo(px, sy + sh - v * sh);
+        }
+        ctx.lineTo(W, sy + sh);
+        ctx.closePath();
+        ctx.fillStyle = hexWithAlpha(theme.accent, 0.25);
+        ctx.fill();
+        ctx.strokeStyle = theme.accent;
+        ctx.stroke();
+        if (a.voiced) {
+          ctx.strokeStyle = theme.ink;
+          ctx.globalAlpha = 0.5;
+          ctx.setLineDash([2, 3]);
+          for (let h = 1; h <= K && h * a.f0 < fMax; h++) {
+            const x = fx(h * a.f0) + 0.5;
+            ctx.beginPath(); ctx.moveTo(x, sy); ctx.lineTo(x, sy + sh); ctx.stroke();
+          }
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
+        }
+      }
+      ctx.fillStyle = theme.muted;
+      ctx.font = `9px ${mono}`;
+      for (const f of [100, 1000]) ctx.fillText(f >= 1000 ? '1k' : `${f}`, fx(f) + 2, sy + sh - 3);
+      ctx.fillText('FFT', 3, sy + 10);
+
+      // Melody trail: last 8 s of pitch, newest at the right
+      const py = 136, ph = H - py;
+      ctx.strokeStyle = theme.grid;
+      ctx.strokeRect(0.5, py + 0.5, W - 1, ph - 1);
+      const hist = a.history;
+      const notes = hist.filter((p) => p.midi !== null).map((p) => p.midi);
+      if (notes.length) {
+        let lo = Math.floor(Math.min(...notes)) - 2, hi = Math.ceil(Math.max(...notes)) + 2;
+        if (hi - lo < 12) { const mid = (hi + lo) / 2; lo = mid - 6; hi = mid + 6; }
+        const now = hist[hist.length - 1].time;
+        const xOf = (t) => W - ((now - t) / 8) * W;
+        const yOf = (m) => py + ph - 4 - ((m - lo) / (hi - lo)) * (ph - 8);
+        // semitone guides at C's
+        ctx.fillStyle = theme.muted;
+        for (let m = Math.ceil(lo); m <= hi; m++) {
+          if (m % 12 !== 0) continue;
+          ctx.fillRect(0, Math.round(yOf(m)) + 0.5, W, 1);
+          ctx.fillText(midiToName(m), 3, yOf(m) - 2);
+        }
+        ctx.strokeStyle = theme.trace;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        let pen = false, prev = null;
+        for (const p of hist) {
+          if (p.midi === null || (prev !== null && Math.abs(p.midi - prev) > 1.5)) pen = false;
+          if (p.midi !== null) {
+            const x = xOf(p.time), y = yOf(p.midi);
+            if (pen) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+            pen = true;
+          }
+          prev = p.midi;
+        }
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = theme.muted;
+        ctx.fillText(tr.audioMelody, 4, py + 13);
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [analyser, theme, tr, K]);
+  return (
+    <div style={{
+      background: theme.panel, border: `1px solid ${theme.line}`, borderRadius: 8,
+      padding: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+    }}>
+      <canvas ref={ref} style={{ width: W, height: H, display: 'block' }} />
+    </div>
+  );
+}
+
+Object.assign(window, { fftInPlace, detectPitch, harmonicsAt, harmonicsToCoeffs, alignAndScale, AudioShapeAnalyser, AudioInput, ListenPanel });
+
+</script>
+<script type="text/babel">
 // Main App: layout, state, tweaks bridge.
 
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
 // URL state encode/decode (feature 7)
-function encodeURLState({ preset, coeffs, N, speed, phaseOffset, traceColor, traceWidth, themeKey, mode, vectors, morphA, morphB }) {
+function encodeURLState({ preset, coeffs, N, speed, phaseOffset, traceColor, traceWidth, themeKey, mode, vectors, morphA, morphB, shape3d, knotP, knotQ }) {
   const o = { v: 1 };
   if (preset) {
     o.p = preset;
@@ -1956,6 +2938,11 @@ function encodeURLState({ preset, coeffs, N, speed, phaseOffset, traceColor, tra
   if (mode === 'studio') {
     o.m = 's';
     if (vectors) o.vec = vectors.map((v) => [v.freq, +v.amp.toFixed(2), +v.phase.toFixed(4)]);
+  }
+  if (mode === '3d') {
+    delete o.c; delete o.p;
+    o.m = '3'; o.s3 = shape3d;
+    if (shape3d === 'torus') { o.kp = knotP; o.kq = knotQ; }
   }
   if (mode === 'morph' && PRESETS[morphA] && PRESETS[morphB]) {
     o.m = 'm'; o.ma = morphA; o.mb = morphB;
@@ -2098,6 +3085,13 @@ function App() {
       setMode('studio');
       if (decoded.vec) setVectors(decoded.vec.map((v, i) => ({ id: i + 1, freq: v[0], amp: v[1], phase: v[2] })));
     }
+    if (decoded.m === '3' && PRESETS_3D[decoded.s3]) {
+      setShape3d(decoded.s3);
+      if (decoded.kp) setKnotP(decoded.kp);
+      if (decoded.kq) setKnotQ(decoded.kq);
+      setMode('3d');
+      applyPath(PRESETS.heart.fn(), 'heart');
+    }
     if (decoded.m === 'm' && PRESETS[decoded.ma] && PRESETS[decoded.mb]) {
       setMorphA(decoded.ma); setMorphB(decoded.mb); setMode('morph');
       if (!decoded.p && !decoded.c) applyPath(PRESETS.heart.fn(), 'heart');
@@ -2171,6 +3165,131 @@ function App() {
   );
   const morphNow = useMemo(() => (morphPrep ? morphCoeffs(morphPrep, morphMix) : null), [morphPrep, morphMix]);
 
+  // 3D: space curves as chains of tilted ellipses
+  const [shape3d, setShape3d] = useState('torus');
+  const [knotP, setKnotP] = useState(2);
+  const [knotQ, setKnotQ] = useState(3);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [view3d, setView3d] = useState({ yaw: 0.6, pitch: 1.05 });
+  const source3d = useMemo(() => sample3d(shape3d, { p: knotP, q: knotQ }), [shape3d, knotP, knotQ]);
+  const terms3d = useMemo(() => dft3d(source3d), [source3d]);
+  const [n3d, setN3d] = useState(200);
+  const N3 = Math.min(n3d, terms3d.length);
+  const onView3d = useCallback((yaw, pitch) => {
+    setView3d((v) => (Math.abs(v.yaw - yaw) < 1e-3 && Math.abs(v.pitch - pitch) < 1e-3 ? v : { yaw, pitch }));
+  }, []);
+  // What the current view sees, as 2D coefficients — feeds sound and export
+  const proj3d = useMemo(
+    () => (mode === '3d' ? project3dToCoeffs(terms3d.slice(0, N3), view3d.yaw, view3d.pitch) : null),
+    [mode, terms3d, N3, view3d],
+  );
+
+  // Listen: mic or audio file → pitch → harmonics → epicycles
+  const [audioIn, setAudioIn] = useState(null);           // AudioInput, created on first use
+  const analyser = useMemo(() => new AudioShapeAnalyser(), []);
+  const liveRef = useRef(null);                            // per-frame coefficients for the canvas
+  const [audioCoeffs, setAudioCoeffs] = useState(null);    // throttled snapshot for export / math panel
+  const [audioSource, setAudioSource] = useState(null);    // 'mic' | 'file' | null
+  const [audioName, setAudioName] = useState('');
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const [audioPos, setAudioPos] = useState(0);
+  const [audioK, setAudioK] = useState(16);
+  const [audioStereo, setAudioStereo] = useState(false);
+  const [audioBusy, setAudioBusy] = useState(false);
+  const [audioError, setAudioError] = useState(null);      // 'mic' | 'decode'
+  const audioFileRef = useRef(null);
+
+  const ensureAudio = () => {
+    if (audioIn) return audioIn;
+    const a = new AudioInput(analyser.size);
+    a.onEnded = () => setAudioPlaying(false);
+    setAudioIn(a);
+    return a;
+  };
+  const resetListen = () => { analyser.reset(); liveRef.current = null; setAudioCoeffs(null); };
+
+  const toggleMic = async () => {
+    const a = ensureAudio();
+    if (audioSource === 'mic') { a.stopMic(); setAudioSource(null); return; }
+    try {
+      await a.startMic();
+      resetListen();
+      setAudioSource('mic');
+      setAudioPlaying(false);
+      setAudioError(null);
+    } catch (e) {
+      setAudioError('mic');
+    }
+  };
+
+  const loadAudioFile = async (file) => {
+    if (!file) return;
+    const a = ensureAudio();
+    a.ctx.resume(); // inside the gesture, so playback is allowed after decoding
+    setMode('audio');
+    setAudioBusy(true);
+    try {
+      await a.loadFile(file);
+      resetListen();
+      setAudioSource('file');
+      setAudioName(file.name);
+      setAudioPos(0);
+      setAudioError(null);
+      a.play(0);
+      setAudioPlaying(true);
+    } catch (e) {
+      setAudioError('decode');
+    } finally {
+      setAudioBusy(false);
+    }
+  };
+
+  const toggleAudioPlay = () => {
+    if (!audioIn || !audioIn.buffer) return;
+    if (audioIn.playing) { audioIn.pause(); setAudioPlaying(false); } else { audioIn.play(); setAudioPlaying(true); }
+  };
+
+  // Analysis loop: one frame per animation frame while a source is live.
+  useEffect(() => {
+    if (mode !== 'audio' || !audioIn || !audioSource) return;
+    const a = audioIn, size = a.anL.fftSize;
+    const L = new Float32Array(size), R = new Float32Array(size), X = new Float32Array(size);
+    let raf, lastSnap = 0;
+    const tick = (ts) => {
+      const stereo = a.stereo;
+      a.anL.getFloatTimeDomainData(L);
+      if (stereo) {
+        a.anR.getFloatTimeDomainData(R);
+        for (let i = 0; i < size; i++) X[i] = 0.5 * (L[i] + R[i]);
+      }
+      const xy = stereo && audioStereo;
+      if ((a.kind === 'mic' || a.playing) &&
+          analyser.process(stereo ? X : L, xy ? L : null, xy ? R : null, a.ctx.sampleRate, audioK, ts / 1000)) {
+        liveRef.current = analyser.coeffs;
+      }
+      if (ts - lastSnap > 250) {
+        lastSnap = ts;
+        setAudioCoeffs(analyser.coeffs);
+        if (a.kind === 'file') setAudioPos(a.position);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [mode, audioIn, audioSource, audioK, audioStereo, analyser]);
+
+  // Leaving the tab: release the mic and pause the file.
+  useEffect(() => {
+    if (mode === 'audio' || !audioIn) return;
+    audioIn.stopMic();
+    audioIn.pause();
+    setAudioPlaying(false);
+    setAudioSource((s) => (s === 'mic' ? null : s));
+  }, [mode, audioIn]);
+  useEffect(() => () => audioIn && audioIn.dispose(), [audioIn]);
+
+  const fmtTime = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
+
   // Drawing handlers
   const onDrawStart = (pt) => {
     setIsDrawing(true);
@@ -2224,15 +3343,15 @@ function App() {
   }, []);
 
   const copyShareURL = useCallback(() => {
-    const aC = mode === 'studio' ? studioCoeffs : mode === 'image' ? imageCoeffs : coeffs;
-    const encoded = encodeURLState({ preset: mode === 'image' ? null : activePreset, coeffs: aC,
+    const aC = mode === 'studio' ? studioCoeffs : mode === 'image' ? imageCoeffs : mode === 'audio' ? audioCoeffs : coeffs;
+    const encoded = encodeURLState({ shape3d, knotP, knotQ, preset: mode === 'image' ? null : activePreset, coeffs: aC,
       N: mode === 'image' ? Math.min(imageN, 60) : N, speed: mode === 'image' ? imageSpeed : speed, phaseOffset, traceColor, traceWidth, themeKey, mode, vectors, morphA, morphB });
     const url = window.location.href.split('#')[0] + '#s=' + encoded;
     window.history.replaceState(null, '', '#s=' + encoded);
-    navigator.clipboard.writeText(url).catch(() => {});
+    navigator.clipboard?.writeText(url).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [mode, studioCoeffs, imageCoeffs, imageN, imageSpeed, coeffs, activePreset, N, speed, phaseOffset, traceColor, traceWidth, themeKey, vectors, morphA, morphB]);
+  }, [mode, shape3d, knotP, knotQ, studioCoeffs, imageCoeffs, audioCoeffs, imageN, imageSpeed, coeffs, activePreset, N, speed, phaseOffset, traceColor, traceWidth, themeKey, vectors, morphA, morphB]);
 
   const startRecording = useCallback(() => {
     const canvas = recordCanvasRef.current;
@@ -2265,8 +3384,8 @@ function App() {
   }, []);
 
   const exportSVG = useCallback(() => {
-    const aC = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : coeffs;
-    const aN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : N;
+    const aC = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : mode === '3d' ? proj3d : mode === 'audio' ? audioCoeffs : coeffs;
+    const aN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : mode === '3d' ? proj3d.length : mode === 'audio' ? (audioCoeffs || []).length : N;
     if (!aC || !aC.length) return;
     const steps = 2000;
     const pts = [];
@@ -2290,11 +3409,11 @@ function App() {
     const a = document.createElement('a');
     a.href = url; a.download = 'fourier-canvas.svg'; a.click();
     URL.revokeObjectURL(url);
-  }, [mode, studioCoeffs, morphNow, imageCoeffs, imageN, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
+  }, [mode, studioCoeffs, morphNow, imageCoeffs, imageN, proj3d, audioCoeffs, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
 
   const exportPNG = useCallback(() => {
-    const aC = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : coeffs;
-    const aN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : N;
+    const aC = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : mode === '3d' ? proj3d : mode === 'audio' ? audioCoeffs : coeffs;
+    const aN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : mode === '3d' ? proj3d.length : mode === 'audio' ? (audioCoeffs || []).length : N;
     if (!aC || !aC.length) return;
     const steps = 2000;
     const pts = [];
@@ -2329,7 +3448,7 @@ function App() {
       a.href = url; a.download = 'fourier-canvas.png'; a.click();
       URL.revokeObjectURL(url);
     });
-  }, [mode, studioCoeffs, morphNow, imageCoeffs, imageN, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
+  }, [mode, studioCoeffs, morphNow, imageCoeffs, imageN, proj3d, audioCoeffs, coeffs, N, phaseOffset, traceColor, traceWidth, theme]);
 
   // Expose keyboard shortcut targets
   useEffect(() => {
@@ -2357,7 +3476,10 @@ function App() {
 
   // Amplitude summary for the math panel
   const topAmps = useMemo(() => {
-    const src = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : coeffs;
+    if (mode === '3d') {
+      return terms3d.slice(0, Math.min(8, N3)).map((e, i) => ({ i, freq: e.k, amp: e.mag, phase: e.tilt }));
+    }
+    const src = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : mode === 'audio' ? audioCoeffs : coeffs;
     if (!src) return [];
     return src.slice(0, 8).map((c, i) => ({
       i,
@@ -2365,15 +3487,15 @@ function App() {
       amp: c.amp,
       phase: c.phase,
     }));
-  }, [coeffs, studioCoeffs, morphNow, imageCoeffs, mode]);
+  }, [coeffs, studioCoeffs, morphNow, imageCoeffs, audioCoeffs, terms3d, N3, mode]);
 
   const maxN = mode === 'image'
     ? Math.min(imageCoeffs ? imageCoeffs.length : 1000, 1000)
     : Math.min(mode !== 'morph' && coeffs ? coeffs.length : 200, 200);
 
   // In studio mode, the active coeffs come from user vectors; maxN is len.
-  const activeCoeffs = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : coeffs;
-  const activeN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : N;
+  const activeCoeffs = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : mode === '3d' ? proj3d : mode === 'audio' ? audioCoeffs : coeffs;
+  const activeN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : mode === '3d' ? proj3d.length : mode === 'audio' ? audioK * 2 : N;
   const activeSpeed = mode === 'image' ? imageSpeed : speed;
 
   // Sound: the circles sing
@@ -2453,13 +3575,13 @@ function App() {
           </div>
           {/* Mode toggle */}
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+            display: 'grid', gridTemplateColumns: 'repeat(6, auto)',
             border: `1px solid ${theme.line}`, borderRadius: 8, overflow: 'hidden',
           }}>
-            {[['draw', tr.draw], ['image', tr.imageTab], ['studio', tr.studio], ['morph', tr.morph]].map(([k, label]) => (
+            {[['draw', tr.draw], ['image', tr.imageTab], ['studio', tr.studio], ['morph', tr.morph], ['audio', tr.audioTab], ['3d', '3D']].map(([k, label]) => (
               <button key={k} onClick={() => setMode(k)}
                 style={{
-                  padding: '9px 4px', fontSize: 12, fontFamily: 'Inter, sans-serif',
+                  padding: '9px 2px', fontSize: 11.5, fontFamily: 'Inter, sans-serif',
                   fontWeight: 600, letterSpacing: 0.4, cursor: 'pointer',
                   background: mode === k ? theme.ink : 'transparent',
                   color: mode === k ? theme.panel : theme.muted,
@@ -2477,7 +3599,7 @@ function App() {
         }}>
         {/* Description */}
         <div style={{ fontSize: 12, color: theme.muted, lineHeight: 1.5 }}>
-          {mode === 'draw' ? tr.tagline : mode === 'morph' ? tr.taglineMorph : mode === 'image' ? tr.imageHint : tr.taglineStudio}
+          {mode === 'draw' ? tr.tagline : mode === 'morph' ? tr.taglineMorph : mode === 'image' ? tr.imageHint : mode === '3d' ? tr.tagline3d : mode === 'audio' ? tr.taglineAudio : tr.taglineStudio}
         </div>
 
         {mode === 'studio' && (
@@ -2545,6 +3667,95 @@ function App() {
             </div>
           </section>
           </>
+        )}
+
+        {mode === '3d' && (
+        <>
+        <section>
+          <SectionLabel theme={theme}>{tr.presets}</SectionLabel>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {Object.entries(PRESETS_3D).map(([key, p]) => (
+              <PresetChip key={key} label={p.label} active={shape3d === key} theme={theme} onClick={() => setShape3d(key)} />
+            ))}
+          </div>
+        </section>
+        {shape3d === 'torus' && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <SectionLabel theme={theme}>{tr.knot}</SectionLabel>
+          <Slider label={tr.knotP} value={knotP} min={1} max={9} step={1} theme={theme} onChange={setKnotP} format={(v) => `${v}`} />
+          <Slider label={tr.knotQ} value={knotQ} min={1} max={12} step={1} theme={theme} onChange={setKnotQ} format={(v) => `${v}`} />
+          <div style={{ fontSize: 11, color: theme.muted, lineHeight: 1.5 }}>{tr.knotHint}</div>
+        </section>
+        )}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <SectionLabel theme={theme}>{tr.controls}</SectionLabel>
+          <Slider label={tr.ellipses} value={N3} min={1} max={terms3d.length} step={1} theme={theme}
+            onChange={setN3d} format={(v) => `${v} / ${terms3d.length}`} />
+          <Slider label={tr.speed} value={speed} min={0.02} max={1.5} step={0.01} theme={theme}
+            onChange={setSpeed} format={(v) => `${v.toFixed(2)}×`} />
+          <Toggle label={tr.autoRotate} value={autoRotate} onChange={setAutoRotate} theme={theme} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button theme={theme} primary onClick={() => setPlaying((p) => !p)}>
+              {playing ? tr.pause : tr.play}
+            </Button>
+          </div>
+          <div style={{ fontSize: 11, color: theme.muted }}>{tr.drag3d}</div>
+        </section>
+        </>
+        )}
+
+        {/* Listen: audio → epicycles */}
+        {mode === 'audio' && (
+        <>
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <SectionLabel theme={theme}>{tr.audioSource}</SectionLabel>
+          <input ref={audioFileRef} type="file" accept="audio/*,video/*" style={{ display: 'none' }}
+            onChange={(e) => { loadAudioFile(e.target.files[0]); e.target.value = ''; }} />
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Button theme={theme} primary={audioSource !== 'mic'} onClick={toggleMic}>
+              {audioSource === 'mic' ? tr.audioMicStop : tr.audioMic}
+            </Button>
+            <Button theme={theme} onClick={() => audioFileRef.current?.click()}>{tr.audioUpload}</Button>
+          </div>
+          {audioBusy && <span style={{ fontSize: 11, color: theme.muted }}>{tr.processing}</span>}
+          {audioError && !audioBusy && (
+            <span style={{ fontSize: 11, color: theme.accent }}>{audioError === 'mic' ? tr.audioMicFail : tr.audioFail}</span>
+          )}
+          {audioSource === 'file' && audioIn && audioIn.buffer && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{
+                fontSize: 11, color: theme.ink, fontFamily: 'JetBrains Mono, monospace',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{audioName}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Button theme={theme} small onClick={toggleAudioPlay}>{audioPlaying ? tr.pause : tr.play}</Button>
+                <input type="range" min={0} max={audioIn.duration} step={0.01} value={audioPos}
+                  onChange={(e) => { const v = parseFloat(e.target.value); audioIn.seek(v); setAudioPos(v); }}
+                  style={{ flex: 1, minWidth: 0, accentColor: theme.accent }} />
+                <span style={{ fontSize: 10, color: theme.muted, fontFamily: 'JetBrains Mono, monospace' }}>
+                  {fmtTime(audioPos)} / {fmtTime(audioIn.duration)}
+                </span>
+              </div>
+            </div>
+          )}
+          {audioSource === 'file' && audioIn && audioIn.stereo && (
+            <Toggle label={tr.audioStereo} value={audioStereo} onChange={setAudioStereo} theme={theme} />
+          )}
+        </section>
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <SectionLabel theme={theme}>{tr.controls}</SectionLabel>
+          <Slider label={tr.audioHarmonics} value={audioK} min={1} max={40} step={1} theme={theme}
+            onChange={setAudioK} format={(v) => `${v}`} />
+          <Slider label={tr.speed} value={speed} min={0.02} max={1.5} step={0.01} theme={theme}
+            onChange={setSpeed} format={(v) => `${v.toFixed(2)}×`} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button theme={theme} primary onClick={() => setPlaying((p) => !p)}>
+              {playing ? tr.pause : tr.play}
+            </Button>
+          </div>
+          <div style={{ fontSize: 11, color: theme.muted, lineHeight: 1.5 }}>{tr.audioHint}</div>
+        </section>
+        </>
         )}
 
         {/* Image → epicycles */}
@@ -2649,7 +3860,7 @@ function App() {
         )}
 
         {/* Sound */}
-        {activeCoeffs && activeCoeffs.length > 0 && (
+        {mode !== 'audio' && activeCoeffs && activeCoeffs.length > 0 && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <SectionLabel theme={theme}>{tr.sound}</SectionLabel>
           <Toggle label={tr.sing} value={singing} onChange={toggleSing} theme={theme} />
@@ -2763,7 +3974,11 @@ function App() {
       <main style={{ position: 'relative', overflow: 'hidden' }}
         onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDragOver(true); } }}
         onDragLeave={(e) => { if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget)) setDragOver(false); }}
-        onDrop={(e) => { e.preventDefault(); setDragOver(false); loadImageFile(e.dataTransfer.files[0]); }}>
+        onDrop={(e) => {
+          e.preventDefault(); setDragOver(false);
+          const f = e.dataTransfer.files[0];
+          if (f && (f.type.startsWith('audio/') || f.type.startsWith('video/'))) loadAudioFile(f); else loadImageFile(f);
+        }}>
         {dragOver && (
           <div style={{
             position: 'absolute', inset: 12, zIndex: 6, pointerEvents: 'none',
@@ -2771,7 +3986,7 @@ function App() {
             background: `${theme.bg}d9`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: 'Newsreader, Georgia, serif', fontStyle: 'italic', fontSize: 22, color: theme.ink,
-          }}>{tr.dropImage}</div>
+          }}>{mode === 'audio' ? tr.dropAudio : tr.dropImage}</div>
         )}
         {/* Top status bar */}
         <div style={{
@@ -2788,6 +4003,10 @@ function App() {
               ? tr.vectorCount(vectors.length)
               : mode === 'morph'
                 ? `${tr.morph} · ${Math.round(morphMix * 100)}%`
+                : mode === '3d'
+                  ? tr.ellipseCount(N3)
+                : mode === 'audio'
+                  ? (audioCoeffs ? `${tr.audioTab} · ${audioCoeffs.length} ${tr.harmonics}` : tr.ready)
                 : mode === 'image'
                   ? (imageCoeffs ? `${imageN} / ${imageCoeffs.length} ${tr.harmonics}` : tr.ready)
                   : (coeffs ? `${N} / ${coeffs.length} ${tr.harmonics}` : tr.ready)}
@@ -2843,9 +4062,31 @@ function App() {
         </div>
 
         {/* Canvas */}
+        {mode === '3d' ? (
+        <Fourier3DCanvas
+          theme={theme}
+          terms={terms3d}
+          source={source3d}
+          N={N3}
+          speed={speed}
+          playing={playing}
+          showCircles={showCircles}
+          showVectors={showVectors}
+          showUserPath={showUserPath}
+          trailMode={trailMode}
+          traceColor={traceColor}
+          traceWidth={traceWidth}
+          onTimeUpdate={(nt) => setT(nt)}
+          seekRef={seekRef}
+          canvasRefOut={recordCanvasRef}
+          isRecording={recording}
+          autoRotate={autoRotate}
+          onViewChange={onView3d}
+        />
+        ) : (
         <FourierCanvas
           theme={theme}
-          coeffs={mode === 'morph' ? null : activeCoeffs}
+          coeffs={mode === 'morph' || mode === 'audio' ? null : activeCoeffs}
           userPath={mode === 'draw' ? activePath : mode === 'image' ? imagePath : null}
           pathResampled={pathResampled}
           N={activeN}
@@ -2858,6 +4099,7 @@ function App() {
           canDraw={mode === 'draw'}
           morph={mode === 'morph' ? morphProp : null}
           onMorphUpdate={setMorphLive}
+          live={mode === 'audio' ? liveRef : null}
           onDrawStart={onDrawStart}
           onDrawPoint={onDrawPoint}
           onDrawEnd={onDrawEnd}
@@ -2869,6 +4111,7 @@ function App() {
           canvasRefOut={recordCanvasRef}
           isRecording={recording}
         />
+        )}
 
         {/* Math readout */}
         {showMath && activeCoeffs && activeCoeffs.length > 0 && (
@@ -2901,7 +4144,7 @@ function App() {
                   <th style={{ textAlign: 'left', padding: '2px 0', fontWeight: 400 }}>#</th>
                   <th style={{ textAlign: 'right', padding: '2px 0', fontWeight: 400 }}>freq</th>
                   <th style={{ textAlign: 'right', padding: '2px 0', fontWeight: 400 }}>|c|</th>
-                  <th style={{ textAlign: 'right', padding: '2px 0', fontWeight: 400 }}>arg</th>
+                  <th style={{ textAlign: 'right', padding: '2px 0', fontWeight: 400 }}>{mode === '3d' ? tr.tilt : 'arg'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -2922,7 +4165,7 @@ function App() {
                         }} />
                         <span style={{ position: 'relative' }}>{r.amp.toFixed(1)}</span>
                       </td>
-                      <td style={{ textAlign: 'right', padding: '3px 0' }}>{r.phase.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right', padding: '3px 0' }}>{mode === '3d' ? `${Math.round(r.phase * 180 / Math.PI)}°` : r.phase.toFixed(2)}</td>
                     </tr>
                   );
                 })}
@@ -2947,6 +4190,29 @@ function App() {
         {singing && synth && activeCoeffs && (
           <div style={{ position: 'absolute', top: 52, left: 20, zIndex: 3 }}>
             <SoundScope synth={synth} theme={theme} label={tr.scope} volume={volume} />
+          </div>
+        )}
+
+        {/* Listen panel: note, FFT spectrum, melody trail */}
+        {mode === 'audio' && audioSource && (
+          <div style={{ position: 'absolute', top: 52, left: 20, zIndex: 3 }}>
+            <ListenPanel analyser={analyser} theme={theme} tr={tr} K={audioK} />
+          </div>
+        )}
+
+        {mode === 'audio' && !audioCoeffs && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'none',
+          }}>
+            <div style={{
+              color: theme.muted, textAlign: 'center',
+              fontFamily: 'Newsreader, Georgia, serif',
+              fontSize: 20, fontStyle: 'italic', letterSpacing: -0.2,
+            }}>
+              {audioBusy ? tr.processing : tr.audioEmpty}
+            </div>
           </div>
         )}
 
