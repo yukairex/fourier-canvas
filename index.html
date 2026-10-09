@@ -634,6 +634,10 @@ const I18N = {
     audioStats: (v, n) => `${v} / ${n} frames pitched`,
     audioPresets: "Instrument presets",
     audioPresetHint: "Each one plays the same phrase (C4 E4 G4 C5). Only the timbre differs, so only the shape differs. The bell's overtones aren't harmonic, so it has no clean shape.",
+    audioFollow: "Speed follows pitch",
+    audioSlow: "Slow-down",
+    audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} loops/s`,
+    audioFollowHint: "The real waveform turns once per period, hundreds of times a second, so the drawing is slowed down by this factor. While the clip plays, it follows the current note: an octave up spins twice as fast.",
     inst: {sine: "Tuning fork", flute: "Flute", clarinet: "Clarinet", oboe: "Oboe", trumpet: "Trumpet", violin: "Violin", voice: "Voice “ah”", organ: "Organ", piano: "Piano", guitar: "Guitar", square: "Square wave", sawtooth: "Sawtooth", bell: "Bell"},
     audioEmpty: "Record or drop an audio clip",
     dropAudio: "Drop an audio file",
@@ -761,6 +765,10 @@ const I18N = {
     audioStats: (v, n) => `${v} / ${n} 帧有音高`,
     audioPresets: "乐器预设",
     audioPresetHint: "每个预设演奏同一段旋律（C4 E4 G4 C5），只有音色不同，所以只有图形不同。钟的泛音不是整数倍谐波，所以画不出干净的图形。",
+    audioFollow: "速度跟随基频",
+    audioSlow: "放慢倍数",
+    audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} 圈/秒`,
+    audioFollowHint: "真实波形每个周期转一圈，每秒几百圈，所以按这个倍数放慢来画。播放时速度跟随当前的音：高八度就转得快一倍。",
     inst: {sine: "音叉", flute: "长笛", clarinet: "单簧管", oboe: "双簧管", trumpet: "小号", violin: "小提琴", voice: "人声“啊”", organ: "管风琴", piano: "钢琴", guitar: "吉他", square: "方波", sawtooth: "锯齿波", bell: "钟"},
     audioEmpty: "录一段音，或拖入音频文件",
     dropAudio: "拖入音频文件",
@@ -887,6 +895,10 @@ const I18N = {
     audioStats: (v, n) => `${v} / ${n} フレームに音高`,
     audioPresets: "楽器プリセット",
     audioPresetHint: "どのプリセットも同じフレーズ（C4 E4 G4 C5）を演奏します。違うのは音色だけなので、違うのは図形だけです。鐘の倍音は整数倍ではないため、きれいな図形になりません。",
+    audioFollow: "速度を基本周波数に連動",
+    audioSlow: "スロー倍率",
+    audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} 周/秒`,
+    audioFollowHint: "実際の波形は1周期で1周し、毎秒数百周します。そのためこの倍率で遅くして描きます。再生中は今の音に追従し、1オクターブ上なら2倍の速さで回ります。",
     inst: {sine: "音叉", flute: "フルート", clarinet: "クラリネット", oboe: "オーボエ", trumpet: "トランペット", violin: "バイオリン", voice: "声「あ」", organ: "オルガン", piano: "ピアノ", guitar: "ギター", square: "矩形波", sawtooth: "ノコギリ波", bell: "鐘"},
     audioEmpty: "録音するか、音声ファイルをドロップ",
     dropAudio: "音声ファイルをドロップ",
@@ -1013,6 +1025,10 @@ const I18N = {
     audioStats: (v, n) => `${v} / ${n} trames avec hauteur`,
     audioPresets: "Instruments",
     audioPresetHint: "Chacun joue la même phrase (C4 E4 G4 C5). Seul le timbre change, donc seule la forme change. Les partiels de la cloche ne sont pas harmoniques : pas de forme nette.",
+    audioFollow: "Vitesse liée à la hauteur",
+    audioSlow: "Ralenti",
+    audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} tours/s`,
+    audioFollowHint: "L'onde réelle fait un tour par période, des centaines de fois par seconde ; le tracé est donc ralenti de ce facteur. Pendant la lecture, il suit la note jouée : une octave plus haut tourne deux fois plus vite.",
     inst: {sine: "Diapason", flute: "Flûte", clarinet: "Clarinette", oboe: "Hautbois", trumpet: "Trompette", violin: "Violon", voice: "Voix « a »", organ: "Orgue", piano: "Piano", guitar: "Guitare", square: "Carré", sawtooth: "Dent de scie", bell: "Cloche"},
     audioEmpty: "Enregistrez ou déposez un extrait audio",
     dropAudio: "Déposez un fichier audio",
@@ -1139,6 +1155,10 @@ const I18N = {
     audioStats: (v, n) => `${v} / ${n} tramas con altura`,
     audioPresets: "Instrumentos",
     audioPresetHint: "Todos tocan la misma frase (C4 E4 G4 C5). Solo cambia el timbre, así que solo cambia la forma. Los parciales de la campana no son armónicos, así que no da una forma limpia.",
+    audioFollow: "Velocidad según la altura",
+    audioSlow: "Ralentización",
+    audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} vueltas/s`,
+    audioFollowHint: "La onda real da una vuelta por periodo, cientos de veces por segundo, así que el dibujo se ralentiza por este factor. Durante la reproducción sigue la nota actual: una octava más arriba gira el doble de rápido.",
     inst: {sine: "Diapasón", flute: "Flauta", clarinet: "Clarinete", oboe: "Oboe", trumpet: "Trompeta", violin: "Violín", voice: "Voz «a»", organ: "Órgano", piano: "Piano", guitar: "Guitarra", square: "Cuadrada", sawtooth: "Diente de sierra", bell: "Campana"},
     audioEmpty: "Graba o suelta un fragmento de audio",
     dropAudio: "Suelta un archivo de audio",
@@ -1532,6 +1552,9 @@ function FourierCanvas({
   const panRef = React.useRef(null); // { startX, startY, startOx, startOy }
 
   const tRef = React.useRef(0);
+  // Speed is read through a ref so live changes (pitch-following) don't restart the loop
+  const speedRef = React.useRef(speed);
+  speedRef.current = speed;
   const tracePtsRef = React.useRef([]);
   const rafRef = React.useRef(0);
   const lastTsRef = React.useRef(0);
@@ -1735,6 +1758,7 @@ function FourierCanvas({
       }
 
       const prevT = tRef.current;
+      const speed = speedRef.current;
       if (playing) tRef.current = (tRef.current + dt * speed) % 1;
       const t = tRef.current;
       onTimeUpdate && onTimeUpdate(t);
@@ -1848,7 +1872,7 @@ function FourierCanvas({
 
     rafRef.current = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(rafRef.current); lastTsRef.current = 0; };
-  }, [dims, theme, coeffs, N, speed, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording, morph]);
+  }, [dims, theme, coeffs, N, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording, morph]);
 
   // Unified pointer events: mouse, touch, stylus — with pressure support and pinch-to-zoom
   const canvasToWorld = (cx, cy, pressure = 1) => {
@@ -3046,7 +3070,7 @@ class AudioInput {
 
 // Result panel: averaged spectrum, averaged harmonics (the shape's recipe)
 // and the pitch track of the whole clip with a playhead.
-function ListenPanel({ result, theme, tr, pos }) {
+function ListenPanel({ result, theme, tr, pos, midiNow }) {
   const ref = React.useRef(null);
   const W = 260, H = 272;
   React.useEffect(() => {
@@ -3063,7 +3087,7 @@ function ListenPanel({ result, theme, tr, pos }) {
     // Header
     ctx.fillStyle = theme.ink;
     ctx.font = `500 20px ${mono}`;
-    const m = result.medianMidi;
+    const m = midiNow !== undefined && midiNow !== null ? midiNow : result.medianMidi;
     ctx.fillText(m !== null ? midiToName(Math.round(m)) : '—', 0, 20);
     ctx.font = `10px ${mono}`;
     ctx.fillStyle = theme.muted;
@@ -3157,7 +3181,7 @@ function ListenPanel({ result, theme, tr, pos }) {
         ctx.fillRect(Math.round(xOf(pos)), py + 1, 1.5, ph - 1);
       }
     }
-  }, [result, theme, tr, pos]);
+  }, [result, theme, tr, pos, midiNow]);
   if (!result) return null;
   return (
     <div style={{
@@ -3467,6 +3491,8 @@ function App() {
   const [instKey, setInstKey] = useState(null);            // active instrument preset
   const [instThumbs, setInstThumbs] = useState({});        // key → SVG path of its averaged shape
   const autoPlayRef = useRef(false);                       // start playback once the clip is analysed
+  const [audioFollow, setAudioFollow] = useState(true);    // drawing speed follows the pitch
+  const [audioSlow, setAudioSlow] = useState(3);           // log10 of the slow-down factor (1000×)
   const synthCacheRef = useRef(new Map());                 // `${key}@${rate}` → synthesized samples
   const synthCached = (key, rate) => {
     const id = `${key}@${rate}`, cache = synthCacheRef.current;
@@ -3618,6 +3644,24 @@ function App() {
   }, [mode, audioIn]);
   useEffect(() => () => audioIn && audioIn.dispose(), [audioIn]);
 
+  // Pitch driving the drawing speed: the note under the playhead while the
+  // clip plays (holding through rests), otherwise the clip's median pitch.
+  const audioMidiNow = useMemo(() => {
+    if (!audioResult) return null;
+    if (audioPlaying || audioPos > 0) {
+      const track = audioResult.track;
+      for (let i = track.length - 1; i >= 0; i--) {
+        if (track[i].t > audioPos + 0.05) continue;
+        if (track[i].midi !== null) return track[i].midi;
+      }
+      const first = track.find((p) => p.midi !== null); // before the first note: use it
+      if (first) return first.midi;
+    }
+    return audioResult.medianMidi;
+  }, [audioResult, audioPlaying, audioPos]);
+  const audioF0 = audioMidiNow !== null && audioMidiNow !== undefined ? midiToFreq(audioMidiNow) : null;
+  const audioLoopsPerSec = audioF0 ? audioF0 / Math.pow(10, audioSlow) : null;
+
   const fmtTime = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
   // Drawing handlers
@@ -3704,9 +3748,9 @@ function App() {
     setRecording(true);
     const duration = mode === 'morph' && morphAuto
       ? morphPeriod * 1000 + 300
-      : Math.max(1500, (1 / (mode === 'image' ? imageSpeed : speed)) * 1000 + 300);
+      : Math.min(60000, Math.max(1500, (1 / activeSpeed) * 1000 + 300));
     setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, duration);
-  }, [recording, speed, imageSpeed, mode, morphAuto, morphPeriod]);
+  }, [recording, activeSpeed, mode, morphAuto, morphPeriod]);
 
   const scrubberSeek = useCallback((newT) => {
     seekRef.current?.(newT);
@@ -3826,7 +3870,8 @@ function App() {
   // In studio mode, the active coeffs come from user vectors; maxN is len.
   const activeCoeffs = mode === 'studio' ? studioCoeffs : mode === 'morph' ? morphNow : mode === 'image' ? imageCoeffs : mode === '3d' ? proj3d : mode === 'audio' ? audioCoeffs : coeffs;
   const activeN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : mode === '3d' ? proj3d.length : mode === 'audio' ? (audioCoeffs || []).length : N;
-  const activeSpeed = mode === 'image' ? imageSpeed : speed;
+  const activeSpeed = mode === 'image' ? imageSpeed
+    : mode === 'audio' && audioFollow && audioLoopsPerSec ? audioLoopsPerSec : speed;
 
   // Sound: the circles sing
   const [singing, setSinging] = useState(false);
@@ -4130,8 +4175,20 @@ function App() {
         </section>
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <SectionLabel theme={theme}>{tr.controls}</SectionLabel>
-          <Slider label={tr.speed} value={speed} min={0.02} max={1.5} step={0.01} theme={theme}
-            onChange={setSpeed} format={(v) => `${v.toFixed(2)}×`} />
+          <Toggle label={tr.audioFollow} value={audioFollow} onChange={setAudioFollow} theme={theme} />
+          {audioFollow ? (
+            <>
+            <Slider label={tr.audioSlow} value={audioSlow} min={2} max={4} step={0.01} theme={theme}
+              onChange={setAudioSlow} format={(v) => `${Math.round(Math.pow(10, v))}×`} />
+            <div style={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: theme.ink }}>
+              {audioF0 ? tr.audioSpeedNow(midiToName(Math.round(audioMidiNow)), audioF0.toFixed(1), audioLoopsPerSec.toFixed(2)) : '—'}
+            </div>
+            <div style={{ fontSize: 11, color: theme.muted, lineHeight: 1.5 }}>{tr.audioFollowHint}</div>
+            </>
+          ) : (
+            <Slider label={tr.speed} value={speed} min={0.02} max={1.5} step={0.01} theme={theme}
+              onChange={setSpeed} format={(v) => `${v.toFixed(2)}×`} />
+          )}
           <div style={{ display: 'flex', gap: 8 }}>
             <Button theme={theme} primary onClick={() => setPlaying((p) => !p)}>
               {playing ? tr.pause : tr.play}
@@ -4579,7 +4636,7 @@ function App() {
         {/* Listen result: averaged spectrum, harmonics, pitch track */}
         {mode === 'audio' && audioResult && (
           <div style={{ position: 'absolute', top: 52, left: 20, zIndex: 3 }}>
-            <ListenPanel result={audioResult} theme={theme} tr={tr} pos={audioPos} />
+            <ListenPanel result={audioResult} theme={theme} tr={tr} pos={audioPos} midiNow={audioMidiNow} />
           </div>
         )}
 
