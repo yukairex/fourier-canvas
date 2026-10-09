@@ -632,6 +632,9 @@ const I18N = {
     audioPitchTrack: "pitch",
     audioNoVoiced: "No pitched sound found in this clip",
     audioStats: (v, n) => `${v} / ${n} frames pitched`,
+    audioPresets: "Instrument presets",
+    audioPresetHint: "Each one plays the same phrase (C4 E4 G4 C5). Only the timbre differs, so only the shape differs. The bell's overtones aren't harmonic, so it has no clean shape.",
+    inst: {sine: "Tuning fork", flute: "Flute", clarinet: "Clarinet", oboe: "Oboe", trumpet: "Trumpet", violin: "Violin", voice: "Voice “ah”", organ: "Organ", piano: "Piano", guitar: "Guitar", square: "Square wave", sawtooth: "Sawtooth", bell: "Bell"},
     audioEmpty: "Record or drop an audio clip",
     dropAudio: "Drop an audio file",
     myImage: "My image",
@@ -756,6 +759,9 @@ const I18N = {
     audioPitchTrack: "音高",
     audioNoVoiced: "这段音频里没有检测到有音高的声音",
     audioStats: (v, n) => `${v} / ${n} 帧有音高`,
+    audioPresets: "乐器预设",
+    audioPresetHint: "每个预设演奏同一段旋律（C4 E4 G4 C5），只有音色不同，所以只有图形不同。钟的泛音不是整数倍谐波，所以画不出干净的图形。",
+    inst: {sine: "音叉", flute: "长笛", clarinet: "单簧管", oboe: "双簧管", trumpet: "小号", violin: "小提琴", voice: "人声“啊”", organ: "管风琴", piano: "钢琴", guitar: "吉他", square: "方波", sawtooth: "锯齿波", bell: "钟"},
     audioEmpty: "录一段音，或拖入音频文件",
     dropAudio: "拖入音频文件",
     myImage: "我的图片",
@@ -879,6 +885,9 @@ const I18N = {
     audioPitchTrack: "音高",
     audioNoVoiced: "このクリップには音高のある音が見つかりません",
     audioStats: (v, n) => `${v} / ${n} フレームに音高`,
+    audioPresets: "楽器プリセット",
+    audioPresetHint: "どのプリセットも同じフレーズ（C4 E4 G4 C5）を演奏します。違うのは音色だけなので、違うのは図形だけです。鐘の倍音は整数倍ではないため、きれいな図形になりません。",
+    inst: {sine: "音叉", flute: "フルート", clarinet: "クラリネット", oboe: "オーボエ", trumpet: "トランペット", violin: "バイオリン", voice: "声「あ」", organ: "オルガン", piano: "ピアノ", guitar: "ギター", square: "矩形波", sawtooth: "ノコギリ波", bell: "鐘"},
     audioEmpty: "録音するか、音声ファイルをドロップ",
     dropAudio: "音声ファイルをドロップ",
     myImage: "自分の画像",
@@ -1002,6 +1011,9 @@ const I18N = {
     audioPitchTrack: "hauteur",
     audioNoVoiced: "Aucun son à hauteur définie dans cet extrait",
     audioStats: (v, n) => `${v} / ${n} trames avec hauteur`,
+    audioPresets: "Instruments",
+    audioPresetHint: "Chacun joue la même phrase (C4 E4 G4 C5). Seul le timbre change, donc seule la forme change. Les partiels de la cloche ne sont pas harmoniques : pas de forme nette.",
+    inst: {sine: "Diapason", flute: "Flûte", clarinet: "Clarinette", oboe: "Hautbois", trumpet: "Trompette", violin: "Violon", voice: "Voix « a »", organ: "Orgue", piano: "Piano", guitar: "Guitare", square: "Carré", sawtooth: "Dent de scie", bell: "Cloche"},
     audioEmpty: "Enregistrez ou déposez un extrait audio",
     dropAudio: "Déposez un fichier audio",
     myImage: "Mon image",
@@ -1125,6 +1137,9 @@ const I18N = {
     audioPitchTrack: "altura",
     audioNoVoiced: "No se encontró sonido con altura en este fragmento",
     audioStats: (v, n) => `${v} / ${n} tramas con altura`,
+    audioPresets: "Instrumentos",
+    audioPresetHint: "Todos tocan la misma frase (C4 E4 G4 C5). Solo cambia el timbre, así que solo cambia la forma. Los parciales de la campana no son armónicos, así que no da una forma limpia.",
+    inst: {sine: "Diapasón", flute: "Flauta", clarinet: "Clarinete", oboe: "Oboe", trumpet: "Trompeta", violin: "Violín", voice: "Voz «a»", organ: "Órgano", piano: "Piano", guitar: "Guitarra", square: "Cuadrada", sawtooth: "Diente de sierra", bell: "Campana"},
     audioEmpty: "Graba o suelta un fragmento de audio",
     dropAudio: "Suelta un archivo de audio",
     myImage: "Mi imagen",
@@ -2722,6 +2737,12 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
     const frame = X.subarray(st, st + N);
     const pitch = detectPitch(frame, sr, 55, maxF);
     if (!pitch || pitch.clarity < 0.6) { track.push({ t, midi: null }); return; }
+    // Skip frames that straddle two notes: both halves must agree on the pitch
+    // (a C4+E4 frame otherwise reads as their common period, C2).
+    const a1 = detectPitch(X.subarray(st, st + N / 2), sr, 55, maxF);
+    const a2 = detectPitch(X.subarray(st + N / 2, st + N), sr, 55, maxF);
+    const off = (q) => !q || Math.abs(12 * Math.log2(q.freq / pitch.freq)) > 0.5;
+    if (off(a1) || off(a2)) { track.push({ t, midi: null }); return; }
     track.push({ t, midi: freqToMidi(pitch.freq) });
 
     const hL = harmonicsAt(stereoXY && R ? L.subarray(st, st + N) : frame, win, sumW, sr, pitch.freq, K);
@@ -2765,6 +2786,129 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
     return { freq: c.freq, amp, phase: c.phase, re: amp * Math.cos(c.phase), im: amp * Math.sin(c.phase) };
   }).sort((a, b) => b.amp - a.amp);
   return { ...info, coeffs };
+}
+
+// ── Instrument presets ───────────────────────────────────────────────────
+// Every preset plays the same phrase; only the timbre (the harmonic recipe,
+// its phases and envelopes) differs — so only the averaged shape differs.
+const PHRASE = [261.63, 329.63, 392.0, 523.25]; // C4 E4 G4 C5
+
+// Resonance curve used for formants and instrument bodies
+const resonance = (f, peaks) => peaks.reduce((s, [F, bw, g]) => s + g / (1 + ((f - F) / bw) ** 2), 0);
+
+const INSTRUMENTS = {
+  sine:     { amps: [1] },
+  flute:    { amps: [1, 0.42, 0.2, 0.08, 0.04, 0.02], vib: 0.004, breath: 0.015, attack: 0.06 },
+  clarinet: { amps: [1, 0.03, 0.55, 0.03, 0.33, 0.02, 0.2, 0.02, 0.11, 0.01, 0.06, 0.01, 0.03], attack: 0.03 },
+  oboe:     { amps: [0.5, 1, 0.9, 0.62, 0.48, 0.34, 0.25, 0.18, 0.12, 0.08, 0.05], vib: 0.003, attack: 0.03 },
+  trumpet:  { amps: [0.45, 0.78, 1, 0.92, 0.74, 0.55, 0.4, 0.28, 0.19, 0.12, 0.08, 0.05], attack: 0.04 },
+  violin:   { spec: (h, f) => (1 / h) * resonance(h * f, [[450, 160, 1], [2800, 800, 0.9], [0, 300, 0.25]]), n: 20, vib: 0.006, attack: 0.08 },
+  voice:    { spec: (h, f) => Math.pow(h, -1.2) * resonance(h * f, [[800, 90, 1], [1150, 110, 0.55], [2900, 160, 0.3]]), n: 24, vib: 0.005, attack: 0.07 },
+  organ:    { amps: [1, 0.62, 0.36, 0.3, 0.12, 0.2, 0.05, 0.12, 0.04, 0.06], attack: 0.02 },
+  piano:    { amps: [1, 0.55, 0.38, 0.24, 0.16, 0.12, 0.08, 0.06, 0.04, 0.03, 0.02], inharm: 0.0004, decay: [1.6, 0.45], attack: 0.004 },
+  guitar:   { pluck: true },
+  square:   { spec: (h) => (h % 2 ? 1 / h : 0), n: 25, zeroPhase: true },
+  sawtooth: { spec: (h) => 1 / h, n: 25, zeroPhase: true },
+  bell:     { partials: [[0.5, 0.5], [1, 1], [1.183, 0.6], [1.506, 0.45], [2, 0.5], [2.514, 0.25], [2.662, 0.2], [3.011, 0.15], [4.166, 0.1]], decay: [1.1, 0.5], attack: 0.003 },
+};
+
+// Small seeded PRNG so every preset sounds (and looks) the same each time
+function mulberry32(a) {
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Render the phrase for one instrument at sample rate sr → mono Float32Array.
+function synthInstrument(key, sr) {
+  const ins = INSTRUMENTS[key];
+  let seed = 0;
+  for (const ch of key) seed = seed * 31 + ch.charCodeAt(0);
+  const rand = mulberry32(seed);
+  const noteDur = 0.5, gap = 0.04;
+  const out = new Float32Array(Math.ceil(PHRASE.length * noteDur * sr));
+  const phases = Array.from({ length: 32 }, () => rand() * 2 * Math.PI);
+
+  PHRASE.forEach((f0, ni) => {
+    const start = Math.round(ni * noteDur * sr), n = Math.round((noteDur - gap) * sr);
+    const rel = 0.03 * sr;
+
+    if (ins.pluck) {
+      // Karplus–Strong plucked string: a noise burst circulating in a damped delay line
+      const P = Math.round(sr / f0), line = new Float32Array(P);
+      for (let i = 0; i < P; i++) line[i] = rand() * 2 - 1;
+      for (let i = 1; i < P; i++) line[i] = 0.5 * (line[i] + line[i - 1]); // softer pluck
+      let idx = 0;
+      for (let s = 0; s < n; s++) {
+        const nxt = (idx + 1) % P;
+        const v = line[idx];
+        line[idx] = 0.996 * 0.5 * (v + line[nxt]);
+        idx = nxt;
+        out[start + s] += v * Math.min(1, (n - s) / rel);
+      }
+      return;
+    }
+
+    // Partials: [ratio to f0, amplitude, phase]
+    let parts;
+    if (ins.partials) parts = ins.partials.map(([r, a], i) => [r, a, phases[i]]);
+    else {
+      const count = ins.amps ? ins.amps.length : ins.n;
+      parts = [];
+      for (let h = 1; h <= count; h++) {
+        const a = ins.amps ? ins.amps[h - 1] : ins.spec(h, f0);
+        const r = ins.inharm ? h * Math.sqrt(1 + ins.inharm * h * h) : h;
+        parts.push([r, a, ins.zeroPhase ? 0 : phases[h - 1]]);
+      }
+    }
+    parts = parts.filter(([r, a]) => a > 0 && r * f0 < sr * 0.45);
+    const P = parts.length;
+    const R = Float64Array.from(parts, (q) => q[0]), A = Float64Array.from(parts, (q) => q[1]);
+    const PH = Float64Array.from(parts, (q) => q[2]);
+    const D = new Float64Array(P).fill(1); // per-partial decay, updated multiplicatively
+    const step = Float64Array.from(R, (r) => (ins.decay ? Math.exp(-(ins.decay[0] + ins.decay[1] * r) / sr) : 1));
+
+    const att = (ins.attack || 0.01) * sr;
+    let phi = 0;
+    for (let s = 0; s < n; s++) {
+      const t = s / sr;
+      const vib = ins.vib ? 1 + ins.vib * Math.sin(2 * Math.PI * 5.5 * t) * Math.min(1, t / 0.2) : 1;
+      phi += (2 * Math.PI * f0 * vib) / sr;
+      const env = Math.min(1, s / att) * Math.min(1, (n - s) / rel);
+      let v = 0;
+      for (let i = 0; i < P; i++) {
+        v += A[i] * D[i] * Math.sin(R[i] * phi + PH[i]);
+        D[i] *= step[i];
+      }
+      if (ins.breath) v += ins.breath * (rand() * 2 - 1);
+      out[start + s] += v * env;
+    }
+  });
+
+  let peak = 1e-9;
+  for (let i = 0; i < out.length; i++) peak = Math.max(peak, Math.abs(out[i]));
+  for (let i = 0; i < out.length; i++) out[i] *= 0.8 / peak;
+  return out;
+}
+
+// Minimal AudioBuffer stand-in for analysing synthesized samples directly
+const monoClip = (data, sr) => ({
+  sampleRate: sr, numberOfChannels: 1, length: data.length, duration: data.length / sr,
+  getChannelData: () => data,
+});
+
+// Closed SVG path of a shape, fitted into a size × size box
+function shapeThumbPath(coeffs, size = 64, pad = 5) {
+  const pts = [];
+  for (let i = 0; i < 240; i++) pts.push(fourierTip(coeffs, i / 240, coeffs.length));
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of pts) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
+  const k = (size - 2 * pad) / Math.max(maxX - minX, maxY - minY, 1e-9);
+  const ox = size / 2 - ((minX + maxX) / 2) * k, oy = size / 2 - ((minY + maxY) / 2) * k;
+  return 'M' + pts.map((p) => `${(p.x * k + ox).toFixed(1)},${(p.y * k + oy).toFixed(1)}`).join('L') + 'Z';
 }
 
 // Audio plumbing: playback of the (resampled) clip and mic recording.
@@ -3025,7 +3169,7 @@ function ListenPanel({ result, theme, tr, pos }) {
   );
 }
 
-Object.assign(window, { fftInPlace, detectPitch, harmonicsAt, harmonicsToCoeffs, alignPhase, resampleBuffer, analyzeClip, AudioInput, ListenPanel });
+Object.assign(window, { fftInPlace, detectPitch, harmonicsAt, harmonicsToCoeffs, alignPhase, resampleBuffer, analyzeClip, AudioInput, ListenPanel, INSTRUMENTS, synthInstrument, monoClip, shapeThumbPath });
 
 </script>
 <script type="text/babel">
@@ -3320,6 +3464,15 @@ function App() {
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [audioPos, setAudioPos] = useState(0);
   const [recInfo, setRecInfo] = useState(null);            // { start, t, level } while recording
+  const [instKey, setInstKey] = useState(null);            // active instrument preset
+  const [instThumbs, setInstThumbs] = useState({});        // key → SVG path of its averaged shape
+  const autoPlayRef = useRef(false);                       // start playback once the clip is analysed
+  const synthCacheRef = useRef(new Map());                 // `${key}@${rate}` → synthesized samples
+  const synthCached = (key, rate) => {
+    const id = `${key}@${rate}`, cache = synthCacheRef.current;
+    if (!cache.has(id)) cache.set(id, synthInstrument(key, rate));
+    return cache.get(id);
+  };
   const audioFileRef = useRef(null);
 
   const ensureAudio = () => {
@@ -3343,6 +3496,7 @@ function App() {
       setAudioPos(0);
       setAudioName(name);
       setAudioError(null);
+      setInstKey(null);
       setClip(buf);
     } catch (e) {
       setAudioError('decode');
@@ -3361,13 +3515,50 @@ function App() {
       const res = analyzeClip(rs, { fftSize: audioFFT, K: audioK, method: audioAvg, stereoXY: audioStereo });
       if (cancelled) return;
       // Play back what was analysed, so the chosen sample rate is audible
-      if (audioIn) audioIn.setBuffer(rs instanceof AudioBuffer ? rs : clip);
+      if (audioIn) {
+        audioIn.setBuffer(rs instanceof AudioBuffer ? rs : clip);
+        if (autoPlayRef.current) { autoPlayRef.current = false; audioIn.play(0); setAudioPlaying(true); }
+      }
       setAudioResult(res);
       setAudioBusy(false);
       setPlaying(true);
     }, 60);
     return () => { cancelled = true; clearTimeout(id); };
   }, [clip, audioIn, audioRate, audioFFT, audioK, audioAvg, audioStereo]);
+
+  const loadInstrument = (key) => {
+    const a = ensureAudio();
+    a.ctx.resume();
+    const sr = 44100, data = synthCached(key, sr);
+    const buf = a.ctx.createBuffer(1, data.length, sr);
+    buf.getChannelData(0).set(data);
+    a.stopPlayback();
+    setAudioPlaying(false);
+    setAudioPos(0);
+    setAudioName(`${tr.inst[key]} · C4 E4 G4 C5`);
+    setAudioError(null);
+    setInstKey(key);
+    autoPlayRef.current = true;
+    setClip(buf);
+  };
+
+  // Gallery: every preset's averaged shape under the current settings,
+  // computed one instrument per tick so the page stays responsive.
+  useEffect(() => {
+    if (mode !== 'audio') return;
+    const keys = Object.keys(INSTRUMENTS);
+    const rate = audioRate || 44100;
+    let i = 0, id;
+    const next = () => {
+      const key = keys[i++];
+      const res = analyzeClip(monoClip(synthCached(key, rate), rate), { fftSize: audioFFT, K: audioK, method: audioAvg });
+      const path = res.coeffs ? shapeThumbPath(res.coeffs) : null;
+      setInstThumbs((t) => ({ ...t, [key]: path }));
+      if (i < keys.length) id = setTimeout(next, 0);
+    };
+    id = setTimeout(next, 150);
+    return () => clearTimeout(id);
+  }, [mode, audioRate, audioFFT, audioK, audioAvg]);
 
   const micErrorKind = (e) => ({
     InsecureContext: 'insecure', Unsupported: 'unsupported', NotAllowedError: 'denied',
@@ -3886,6 +4077,31 @@ function App() {
               </div>
             </div>
           )}
+        </section>
+        <section>
+          <SectionLabel theme={theme}>{tr.audioPresets}</SectionLabel>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+            {Object.keys(INSTRUMENTS).map((key) => (
+              <button key={key} onClick={() => loadInstrument(key)} title={tr.inst[key]}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                  padding: '6px 2px 5px', cursor: 'pointer', minWidth: 0,
+                  background: instKey === key ? hexWithAlpha(theme.accent, 0.12) : 'transparent',
+                  border: `1px solid ${instKey === key ? theme.accent : theme.line}`, borderRadius: 6,
+                }}>
+                <svg viewBox="0 0 64 64" width="52" height="52" style={{ display: 'block' }}>
+                  {instThumbs[key]
+                    ? <path d={instThumbs[key]} fill="none" stroke={traceColor || theme.trace} strokeWidth="1.4" strokeLinejoin="round" />
+                    : <text x="32" y="36" textAnchor="middle" fontSize="10" fill={theme.muted}>{key in instThumbs ? '—' : '…'}</text>}
+                </svg>
+                <span style={{
+                  fontSize: 10, color: theme.ink, fontFamily: 'Inter, sans-serif', maxWidth: '100%',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{tr.inst[key]}</span>
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: theme.muted, lineHeight: 1.5, marginTop: 8 }}>{tr.audioPresetHint}</div>
         </section>
         <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <SectionLabel theme={theme}>{tr.audioAnalysis}</SectionLabel>
