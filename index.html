@@ -608,12 +608,12 @@ const I18N = {
     ellipseCount: (n) => `3D · ${n} ellipse${n === 1 ? '' : 's'}`,
     imageTab: "Image",
     audioTab: "Listen",
-    taglineAudio: "Load a clip or record one. It is resampled at the rate you pick, cut into FFT frames, and the harmonic spectra of all frames are averaged into one spectrum, which draws one image.",
+    taglineAudio: "Load or record a clip. Overlapping FFT windows become a smoothly changing drawing: size follows volume and colour follows pitch.",
     audioSource: "Audio in",
     audioUpload: "Load audio",
     audioStereo: "Stereo as X/Y (L → x, R → y)",
     audioHarmonics: "Harmonics",
-    audioHint: "Each pitched frame gives the harmonics of its own pitch. They are phase-aligned and averaged, with louder frames counting more. Complex averaging keeps only the timbre that stays consistent; magnitude averaging keeps all the energy. A pure tone gives a circle.",
+    audioHint: "Each overlapping window is analysed separately. Neighbouring Fourier drawings blend smoothly while the clip plays; louder windows draw larger and higher notes move the line colour toward red.",
     audioMicFail: "Microphone unavailable",
     audioMicErr: {"denied": "Microphone permission was blocked. Allow it in the address bar (or system settings) and try again.", "unsupported": "This browser can't access the microphone. In-app browsers (WeChat, etc.) often can't; open the page in Safari or Chrome.", "insecure": "The microphone needs an HTTPS page.", "nodevice": "No microphone found.", "busy": "The microphone is in use by another app."},
     audioFail: "Couldn't decode that file",
@@ -739,12 +739,12 @@ const I18N = {
     ellipseCount: (n) => `3D · ${n} 个椭圆`,
     imageTab: "图片",
     audioTab: "聆听",
-    taglineAudio: "上传或录制一段音频。按你选的采样率重新采样，切成 FFT 帧，再把所有帧的谐波频谱做频域平均，得到一个频谱，画出一张图。",
+    taglineAudio: "上传或录制一段音频。重叠的 FFT 时间窗会生成平滑变化的图形：大小跟随音量，线条颜色跟随音高。",
     audioSource: "音频输入",
     audioUpload: "上传音频",
     audioStereo: "立体声作 X/Y（左 → x，右 → y）",
     audioHarmonics: "谐波数",
-    audioHint: "每个有音高的帧都会给出自己音高的各次谐波。这些谐波经过相位对齐后取平均，声音越响的帧权重越大。复数平均只保留整段里一致的音色，幅度平均保留全部能量。纯音会画出一个圆。",
+    audioHint: "每个重叠时间窗都会独立做傅立叶分析，相邻图形在播放时平滑过渡；声音越响图形越大，音高越高线条颜色越接近红色。",
     audioMicFail: "无法使用麦克风",
     audioMicErr: {"denied": "麦克风权限被拒绝。请在地址栏（或系统设置）里允许后再试。", "unsupported": "这个浏览器无法使用麦克风。微信等 App 内置浏览器通常不支持，请用 Safari 或 Chrome 打开。", "insecure": "麦克风需要 HTTPS 页面。", "nodevice": "没有找到麦克风。", "busy": "麦克风正被其他应用占用。"},
     audioFail: "无法解码该文件",
@@ -869,12 +869,12 @@ const I18N = {
     ellipseCount: (n) => `3D · 楕円 ${n} 個`,
     imageTab: "画像",
     audioTab: "聴く",
-    taglineAudio: "音声を読み込むか録音します。選んだサンプリング周波数でリサンプリングし、FFT フレームに分割して、全フレームの倍音スペクトルを周波数領域で平均します。得られた1つのスペクトルが1枚の図形を描きます。",
+    taglineAudio: "音声を読み込むか録音します。重なり合う FFT 窓が滑らかに変化する図形になり、大きさは音量、線の色は音程に連動します。",
     audioSource: "音声入力",
     audioUpload: "音声を読み込む",
     audioStereo: "ステレオを X/Y に（L → x、R → y）",
     audioHarmonics: "倍音数",
-    audioHint: "音高のある各フレームから、その音高の倍音を求めます。位相をそろえてから平均し、音の大きいフレームほど重みが大きくなります。複素平均はクリップ全体で一貫した音色だけを残し、振幅平均はすべてのエネルギーを残します。純音は円になります。",
+    audioHint: "重なり合う各時間窓を個別にフーリエ解析し、再生中は隣接する図形を滑らかに補間します。大きな音ほど図形が大きく、高い音ほど線が赤に近づきます。",
     audioMicFail: "マイクを使用できません",
     audioMicErr: {"denied": "マイクの許可がブロックされています。アドレスバー（またはシステム設定）で許可してから再試行してください。", "unsupported": "このブラウザはマイクを使えません。アプリ内ブラウザ（LINE など）では使えないことが多いので、Safari か Chrome で開いてください。", "insecure": "マイクには HTTPS のページが必要です。", "nodevice": "マイクが見つかりません。", "busy": "マイクは他のアプリで使用中です。"},
     audioFail: "このファイルをデコードできません",
@@ -999,12 +999,12 @@ const I18N = {
     ellipseCount: (n) => `3D · ${n} ellipse${n === 1 ? '' : 's'}`,
     imageTab: "Image",
     audioTab: "Écoute",
-    taglineAudio: "Chargez ou enregistrez un extrait. Il est rééchantillonné à la fréquence choisie, découpé en trames FFT, et les spectres harmoniques de toutes les trames sont moyennés en un seul spectre, qui dessine une seule image.",
+    taglineAudio: "Chargez ou enregistrez un extrait. Des fenêtres FFT superposées produisent un dessin fluide : sa taille suit le volume et sa couleur suit la hauteur.",
     audioSource: "Entrée audio",
     audioUpload: "Charger un son",
     audioStereo: "Stéréo en X/Y (G → x, D → y)",
     audioHarmonics: "Harmoniques",
-    audioHint: "Chaque trame dotée d'une hauteur donne les harmoniques de cette hauteur. Elles sont alignées en phase puis moyennées, les trames plus fortes comptant davantage. La moyenne complexe ne garde que le timbre constant ; la moyenne des amplitudes garde toute l'énergie. Un son pur donne un cercle.",
+    audioHint: "Chaque fenêtre superposée est analysée séparément. Les dessins voisins se fondent pendant la lecture ; les sons forts sont plus grands et les notes aiguës tirent la ligne vers le rouge.",
     audioMicFail: "Micro indisponible",
     audioMicErr: {"denied": "L'accès au micro est bloqué. Autorisez-le dans la barre d'adresse (ou les réglages système) puis réessayez.", "unsupported": "Ce navigateur n'a pas accès au micro. Les navigateurs intégrés aux apps ne le permettent souvent pas : ouvrez la page dans Safari ou Chrome.", "insecure": "Le micro nécessite une page HTTPS.", "nodevice": "Aucun micro trouvé.", "busy": "Le micro est utilisé par une autre application."},
     audioFail: "Impossible de décoder ce fichier",
@@ -1129,12 +1129,12 @@ const I18N = {
     ellipseCount: (n) => `3D · ${n} elipse${n === 1 ? '' : 's'}`,
     imageTab: "Imagen",
     audioTab: "Escuchar",
-    taglineAudio: "Carga o graba un fragmento. Se remuestrea a la frecuencia elegida, se divide en tramas FFT y los espectros armónicos de todas las tramas se promedian en un solo espectro, que dibuja una sola imagen.",
+    taglineAudio: "Carga o graba un fragmento. Ventanas FFT superpuestas crean un dibujo fluido: el tamaño sigue el volumen y el color sigue el tono.",
     audioSource: "Entrada de audio",
     audioUpload: "Cargar audio",
     audioStereo: "Estéreo como X/Y (I → x, D → y)",
     audioHarmonics: "Armónicos",
-    audioHint: "Cada trama con altura definida da los armónicos de esa altura. Se alinean en fase y se promedian, y las tramas más fuertes cuentan más. El promedio complejo conserva solo el timbre constante; el de magnitud conserva toda la energía. Un tono puro da un círculo.",
+    audioHint: "Cada ventana superpuesta se analiza por separado. Los dibujos vecinos se mezclan durante la reproducción; los sonidos fuertes son más grandes y las notas agudas acercan la línea al rojo.",
     audioMicFail: "Micrófono no disponible",
     audioMicErr: {"denied": "El permiso del micrófono está bloqueado. Permítelo en la barra de direcciones (o en los ajustes del sistema) y vuelve a intentarlo.", "unsupported": "Este navegador no puede usar el micrófono. Los navegadores integrados en apps a menudo no pueden: abre la página en Safari o Chrome.", "insecure": "El micrófono necesita una página HTTPS.", "nodevice": "No se encontró ningún micrófono.", "busy": "Otra aplicación está usando el micrófono."},
     audioFail: "No se pudo decodificar el archivo",
@@ -1540,6 +1540,7 @@ function FourierCanvas({
   traceColor, traceWidth, phaseOffset,
   seekRef, canvasRefOut, isRecording,
   morph, onMorphUpdate,
+  liveCurve = false,
 }) {
   const canvasRef = React.useRef(null);
   const overlayRef = React.useRef(null);
@@ -1755,6 +1756,12 @@ function FourierCanvas({
         cs = morphCoeffs(morph.prep, ms);
         morphCurve = [];
         for (let i = 0; i <= 400; i++) morphCurve.push(fourierTip(cs, i / 400, N, phaseOffset || 0));
+      } else if (liveCurve) {
+        // Audio analysis supplies a continuously changing curve. Draw the
+        // complete loop every frame instead of leaving a trail from an older
+        // analysis window behind.
+        morphCurve = [];
+        for (let i = 0; i <= 400; i++) morphCurve.push(fourierTip(cs, i / 400, N, phaseOffset || 0));
       }
 
       const prevT = tRef.current;
@@ -1767,7 +1774,7 @@ function FourierCanvas({
       const tip = tips[tips.length - 1];
 
       // Sub-step the trace so detailed shapes (images) stay smooth at any speed.
-      if (playing && !morph && !(maxAge === Infinity && traceAdvRef.current >= 1)) {
+      if (playing && !morph && !liveCurve && !(maxAge === Infinity && traceAdvRef.current >= 1)) {
         const adv = dt * speed;
         const steps = Math.min(64, Math.max(1, Math.ceil(adv * 2000)));
         for (let k = 1; k <= steps; k++) {
@@ -1872,7 +1879,7 @@ function FourierCanvas({
 
     rafRef.current = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(rafRef.current); lastTsRef.current = 0; };
-  }, [dims, theme, coeffs, N, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording, morph]);
+  }, [dims, theme, coeffs, N, playing, showCircles, showVectors, trailMode, traceColor, traceWidth, phaseOffset, isRecording, morph, liveCurve]);
 
   // Unified pointer events: mouse, touch, stylus — with pressure support and pinch-to-zoom
   const canvasToWorld = (cx, cy, pressure = 1) => {
@@ -2732,8 +2739,10 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
   let sumW = 0;
   for (let i = 0; i < N; i++) { win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (N - 1)); sumW += win[i]; }
 
-  // 50% overlap, thinned out for long clips so analysis stays around a second
-  const hop = Math.max(N >> 1, Math.ceil((len - N) / 800));
+  // 75% overlap gives a new analysis window roughly every 46 ms at the
+  // default settings. Very long clips are thinned to keep analysis bounded;
+  // playback still interpolates between adjacent windows.
+  const hop = Math.max(N >> 2, Math.ceil(Math.max(0, len - N) / 2400));
   const starts = [];
   for (let st = 0; st + N <= len; st += hop) starts.push(st);
   const levels = starts.map((st) => {
@@ -2747,12 +2756,17 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
   const re = new Float64Array(N), im = new Float64Array(N);
   const acc = new Map();
   const track = [];
+  const segments = [];
   let wSum = 0, voiced = 0, loud = 0;
   const maxF = Math.min(1600, sr / 4);
 
   starts.forEach((st, fi) => {
     const t = (st + N / 2) / sr;
-    if (levels[fi] < gate) { track.push({ t, midi: null }); return; }
+    if (levels[fi] < gate) {
+      track.push({ t, midi: null });
+      segments.push({ t, midi: null, level: levels[fi], coeffs: null });
+      return;
+    }
     loud++;
     for (let i = 0; i < N; i++) { re[i] = X[st + i] * win[i]; im[i] = 0; }
     fftInPlace(re, im);
@@ -2760,21 +2774,39 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
 
     const frame = X.subarray(st, st + N);
     const pitch = detectPitch(frame, sr, 55, maxF);
-    if (!pitch || pitch.clarity < 0.6) { track.push({ t, midi: null }); return; }
+    if (!pitch || pitch.clarity < 0.6) {
+      track.push({ t, midi: null });
+      segments.push({ t, midi: null, level: levels[fi], coeffs: null });
+      return;
+    }
     // Skip frames that straddle two notes: both halves must agree on the pitch
     // (a C4+E4 frame otherwise reads as their common period, C2).
     const a1 = detectPitch(X.subarray(st, st + N / 2), sr, 55, maxF);
     const a2 = detectPitch(X.subarray(st + N / 2, st + N), sr, 55, maxF);
     const off = (q) => !q || Math.abs(12 * Math.log2(q.freq / pitch.freq)) > 0.5;
-    if (off(a1) || off(a2)) { track.push({ t, midi: null }); return; }
-    track.push({ t, midi: freqToMidi(pitch.freq) });
+    if (off(a1) || off(a2)) {
+      track.push({ t, midi: null });
+      segments.push({ t, midi: null, level: levels[fi], coeffs: null });
+      return;
+    }
+    const midi = freqToMidi(pitch.freq);
+    track.push({ t, midi });
 
     const hL = harmonicsAt(stereoXY && R ? L.subarray(st, st + N) : frame, win, sumW, sr, pitch.freq, K);
     const hR = stereoXY && R ? harmonicsAt(R.subarray(st, st + N), win, sumW, sr, pitch.freq, K) : null;
     const cs = alignPhase(harmonicsToCoeffs(hL, hR));
     let total = 0;
     for (const c of cs) total += Math.hypot(c.re, c.im);
-    if (total < 1e-9) return;
+    if (total < 1e-9) {
+      segments.push({ t, midi, level: levels[fi], coeffs: null });
+      return;
+    }
+    // Keep each window's Fourier drawing. Its final scale is applied after we
+    // know the loudest window, so visual size carries loudness consistently.
+    segments.push({
+      t, midi, level: levels[fi],
+      coeffs: cs.map((c) => ({ freq: c.freq, re: c.re / total, im: c.im / total })),
+    });
     // Each frame's shape is normalised, then weighted by how loud the frame is
     const w = levels[fi];
     for (const c of cs) {
@@ -2792,7 +2824,7 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
 
   const midis = track.filter((p) => p.midi !== null).map((p) => p.midi).sort((a, b) => a - b);
   const info = {
-    sr, fftSize: N, hop, frames: starts.length, voiced, duration: buf.duration, spectrum, track,
+    sr, fftSize: N, hop, frames: starts.length, voiced, duration: buf.duration, spectrum, track, segments,
     medianMidi: midis.length ? midis[midis.length >> 1] : null,
   };
   if (!voiced) return { ...info, coeffs: null };
@@ -2809,7 +2841,34 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
     const amp = c.amp * k;
     return { freq: c.freq, amp, phase: c.phase, re: amp * Math.cos(c.phase), im: amp * Math.sin(c.phase) };
   }).sort((a, b) => b.amp - a.amp);
+  const peakLevel = Math.max(gate, ...segments.map((s) => s.level));
+  for (const seg of segments) {
+    if (!seg.coeffs) continue;
+    // Perceptual loudness scaling: silence approaches zero while ordinary
+    // dynamics remain visible instead of collapsing to tiny shapes.
+    const scale = 220 * Math.pow(Math.min(1, seg.level / peakLevel), 0.65);
+    seg.coeffs = seg.coeffs.map((c) => {
+      const re = c.re * scale, im = c.im * scale;
+      return { freq: c.freq, re, im, amp: Math.hypot(re, im), phase: Math.atan2(im, re) };
+    }).sort((a, b) => b.amp - a.amp);
+  }
   return { ...info, coeffs };
+}
+
+// Smoothly interpolate two analysis windows, including harmonics that only
+// exist on one side of the transition.
+function blendAudioCoeffs(a, b, mix) {
+  const left = a || [], right = b || [];
+  const ma = new Map(left.map((c) => [c.freq, c]));
+  const mb = new Map(right.map((c) => [c.freq, c]));
+  const freqs = [...new Set([...ma.keys(), ...mb.keys()])];
+  return freqs.map((freq) => {
+    const x = ma.get(freq) || { re: 0, im: 0 };
+    const y = mb.get(freq) || { re: 0, im: 0 };
+    const re = x.re + (y.re - x.re) * mix;
+    const im = x.im + (y.im - x.im) * mix;
+    return { freq, re, im, amp: Math.hypot(re, im), phase: Math.atan2(im, re) };
+  }).filter((c) => c.amp > 0.01).sort((x, y) => y.amp - x.amp);
 }
 
 // ── Instrument presets ───────────────────────────────────────────────────
@@ -3475,18 +3534,37 @@ function App() {
   const [audioAvg, setAudioAvg] = useState('complex');     // 'complex' | 'magnitude'
   const [audioStereo, setAudioStereo] = useState(false);
   const [audioResult, setAudioResult] = useState(null);
-  const audioCoeffs = audioResult ? audioResult.coeffs : null;
-  // The finished image, shown as the source path while the epicycles trace it
-  const audioPath = useMemo(() => {
-    if (!audioCoeffs) return null;
-    const pts = [];
-    for (let i = 0; i <= 720; i++) pts.push(fourierTip(audioCoeffs, i / 720, audioCoeffs.length));
-    return pts;
-  }, [audioCoeffs]);
   const [audioBusy, setAudioBusy] = useState(false);
   const [audioError, setAudioError] = useState(null);      // 'decode' | { mic: reason, detail }
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [audioPos, setAudioPos] = useState(0);
+  // Window-by-window visualization at the playhead. Adjacent Fourier results
+  // use smoothstep interpolation so shape, loudness and pitch colour glide
+  // rather than jumping at FFT boundaries.
+  const audioVisual = useMemo(() => {
+    if (!audioResult || !audioResult.segments || !audioResult.segments.length) return null;
+    const xs = audioResult.segments;
+    let hi = 0;
+    while (hi < xs.length && xs[hi].t < audioPos) hi++;
+    const b = xs[Math.min(hi, xs.length - 1)];
+    const a = xs[Math.max(0, hi - 1)];
+    const span = Math.max(1e-6, b.t - a.t);
+    const raw = Math.max(0, Math.min(1, (audioPos - a.t) / span));
+    const mix = raw * raw * (3 - 2 * raw);
+    const coeffs = blendAudioCoeffs(a.coeffs, b.coeffs, mix);
+    const ma = a.midi == null ? b.midi : a.midi;
+    const mb = b.midi == null ? ma : b.midi;
+    const midi = ma == null ? audioResult.medianMidi : ma + (mb - ma) * mix;
+    const level = a.level + (b.level - a.level) * mix;
+    return { coeffs, midi, level };
+  }, [audioResult, audioPos]);
+  const audioCoeffs = audioVisual ? audioVisual.coeffs : (audioResult ? audioResult.coeffs : null);
+  const audioPitchColor = useMemo(() => {
+    const midi = audioVisual ? audioVisual.midi : (audioResult && audioResult.medianMidi);
+    if (midi == null) return null;
+    const hue = 260 - Math.max(0, Math.min(1, (midi - 36) / 60)) * 260;
+    return `hsl(${hue.toFixed(1)} 82% 52%)`;
+  }, [audioVisual, audioResult]);
   const [recInfo, setRecInfo] = useState(null);            // { start, t, level } while recording
   const [instKey, setInstKey] = useState(null);            // active instrument preset
   const [instThumbs, setInstThumbs] = useState({});        // key → SVG path of its averaged shape
@@ -3625,7 +3703,7 @@ function App() {
   // Playhead
   useEffect(() => {
     if (!audioPlaying || !audioIn) return;
-    const id = setInterval(() => setAudioPos(audioIn.position), 100);
+    const id = setInterval(() => setAudioPos(audioIn.position), 40);
     return () => clearInterval(id);
   }, [audioPlaying, audioIn]);
 
@@ -3872,6 +3950,7 @@ function App() {
   const activeN = mode === 'studio' ? studioCoeffs.length : mode === 'image' ? imageN : mode === '3d' ? proj3d.length : mode === 'audio' ? (audioCoeffs || []).length : N;
   const activeSpeed = mode === 'image' ? imageSpeed
     : mode === 'audio' && audioFollow && audioLoopsPerSec ? audioLoopsPerSec : speed;
+  const activeTraceColor = mode === 'audio' && audioPitchColor ? audioPitchColor : traceColor;
 
   // Sound: the circles sing
   const [singing, setSinging] = useState(false);
@@ -4528,14 +4607,14 @@ function App() {
         <FourierCanvas
           theme={theme}
           coeffs={mode === 'morph' ? null : activeCoeffs}
-          userPath={mode === 'draw' ? activePath : mode === 'image' ? imagePath : mode === 'audio' ? audioPath : null}
+          userPath={mode === 'draw' ? activePath : mode === 'image' ? imagePath : null}
           pathResampled={pathResampled}
           N={activeN}
           speed={activeSpeed}
           playing={playing && !isDrawing}
           showCircles={showCircles}
           showVectors={showVectors}
-          showUserPath={showUserPath && (mode === 'draw' || mode === 'image' || mode === 'audio')}
+          showUserPath={showUserPath && (mode === 'draw' || mode === 'image')}
           trailMode={trailMode}
           canDraw={mode === 'draw'}
           morph={mode === 'morph' ? morphProp : null}
@@ -4544,12 +4623,13 @@ function App() {
           onDrawPoint={onDrawPoint}
           onDrawEnd={onDrawEnd}
           onTimeUpdate={(nt) => setT(nt)}
-          traceColor={traceColor}
+          traceColor={activeTraceColor}
           traceWidth={traceWidth}
           phaseOffset={phaseOffset}
           seekRef={seekRef}
           canvasRefOut={recordCanvasRef}
           isRecording={recording}
+          liveCurve={mode === 'audio'}
         />
         )}
 
