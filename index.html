@@ -3188,11 +3188,11 @@ class AudioInput {
   }
 }
 
-// Result panel: the current note's harmonics, the whole-clip pitch track, and
-// a direct comparison between the current curve and its source waveform.
+// Result panel: current pitch + harmonics, and a direct comparison between the
+// current epicycle system and its source waveform.
 function ListenPanel({ result, theme, tr, visual, pitchColor, phase = 0 }) {
   const ref = React.useRef(null);
-  const W = 380, H = 320;
+  const W = 380, H = 300;
   React.useEffect(() => {
     const c = ref.current;
     if (!c || !result) return;
@@ -3204,33 +3204,34 @@ function ListenPanel({ result, theme, tr, visual, pitchColor, phase = 0 }) {
     const mono = '"JetBrains Mono", monospace';
     const label = (txt, x, y) => { ctx.fillStyle = theme.muted; ctx.font = `9px ${mono}`; ctx.fillText(txt, x, y); };
 
-    // Header
-    ctx.font = `10px ${mono}`;
-    ctx.fillStyle = theme.muted;
-    ctx.textAlign = 'right';
-    ctx.fillText(`${(result.sr / 1000).toFixed(result.sr % 1000 ? 2 : 0)} kHz · N ${result.fftSize}`, W, 14);
-    ctx.fillText(`Δf ${(result.sr / result.fftSize).toFixed(1)} Hz`, W, 26);
-    ctx.fillText(tr.audioStats(result.voiced, result.frames), W, 38);
-    ctx.textAlign = 'left';
     const liveColor = pitchColor || theme.trace;
 
-    // Harmonics of the note under the playhead (never a whole-clip average).
-    const hy = 48, hh = 62;
+    // Pitch and harmonics share one row; there is no metadata header above it.
+    const hy = 0, hh = 72, pitchW = 100;
     ctx.strokeStyle = theme.grid;
     ctx.lineWidth = 1;
     ctx.strokeRect(0.5, hy + 0.5, W - 1, hh);
+    ctx.beginPath(); ctx.moveTo(pitchW + 0.5, hy); ctx.lineTo(pitchW + 0.5, hy + hh); ctx.stroke();
+    const midi = visual && visual.midi != null ? visual.midi : result.medianMidi;
+    ctx.fillStyle = liveColor;
+    ctx.font = `500 20px ${mono}`;
+    ctx.fillText(midi != null ? midiToName(Math.round(midi)) : '—', 8, 29);
+    ctx.fillStyle = theme.muted;
+    ctx.font = `10px ${mono}`;
+    if (midi != null) ctx.fillText(`${midiToFreq(midi).toFixed(1)} Hz`, 8, 48);
+
     const byH = new Map();
     for (const co of (visual && visual.coeffs) || []) byH.set(Math.abs(co.freq), (byH.get(Math.abs(co.freq)) || 0) + co.amp);
     const hs = [...byH.keys()].sort((a, b) => a - b);
     const hMax = Math.max(1e-9, ...byH.values());
     const n = Math.max(1, hs.length ? hs[hs.length - 1] : 1);
-    const bw = (W - 8) / n;
+    const bw = (W - pitchW - 8) / n;
     ctx.fillStyle = liveColor;
     for (const h of hs) {
       const v = byH.get(h) / hMax;
-      ctx.fillRect(4 + (h - 1) * bw + 1, hy + hh - 2 - v * (hh - 16), Math.max(1, bw - 2), v * (hh - 16));
+      ctx.fillRect(pitchW + 4 + (h - 1) * bw + 1, hy + hh - 2 - v * (hh - 16), Math.max(1, bw - 2), v * (hh - 16));
     }
-    label(tr.audioHarmBars, 4, hy + 11);
+    label(tr.audioHarmBars, pitchW + 5, hy + 11);
 
     // Enlarged current-window comparison. The left side shows the complete
     // epicycle system with axes; the right side overlays the source waveform
@@ -4697,7 +4698,7 @@ function App() {
           speed={activeSpeed}
           playing={playing && !isDrawing}
           showCircles={mode === 'audio' ? false : showCircles}
-          showVectors={showVectors}
+          showVectors={mode === 'audio' ? false : showVectors}
           showUserPath={showUserPath && (mode === 'draw' || mode === 'image')}
           trailMode={trailMode}
           canDraw={mode === 'draw'}
