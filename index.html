@@ -628,10 +628,10 @@ const I18N = {
     audioAvgComplex: "Complex (keeps phase)",
     audioAvgMag: "Magnitude",
     audioSpectrum: "avg spectrum",
-    audioHarmBars: "avg harmonics",
+    audioHarmBars: "current harmonics",
     audioPitchTrack: "pitch",
     audioCurrentShape: "current drawing",
-    audioWaveform: "waveform",
+    audioWaveform: "waveform / y(t)",
     audioNoVoiced: "No pitched sound found in this clip",
     audioStats: (v, n) => `${v} / ${n} frames pitched`,
     audioPresets: "Instrument presets",
@@ -761,10 +761,10 @@ const I18N = {
     audioAvgComplex: "复数平均（保留相位）",
     audioAvgMag: "幅度平均",
     audioSpectrum: "平均频谱",
-    audioHarmBars: "平均谐波",
+    audioHarmBars: "当前音谐波",
     audioPitchTrack: "音高",
     audioCurrentShape: "本轮图像",
-    audioWaveform: "波形",
+    audioWaveform: "波形 / y(t)",
     audioNoVoiced: "这段音频里没有检测到有音高的声音",
     audioStats: (v, n) => `${v} / ${n} 帧有音高`,
     audioPresets: "乐器预设",
@@ -893,10 +893,10 @@ const I18N = {
     audioAvgComplex: "複素平均（位相を保持）",
     audioAvgMag: "振幅平均",
     audioSpectrum: "平均スペクトル",
-    audioHarmBars: "平均倍音",
+    audioHarmBars: "現在の倍音",
     audioPitchTrack: "音高",
     audioCurrentShape: "現在の図形",
-    audioWaveform: "波形",
+    audioWaveform: "波形 / y(t)",
     audioNoVoiced: "このクリップには音高のある音が見つかりません",
     audioStats: (v, n) => `${v} / ${n} フレームに音高`,
     audioPresets: "楽器プリセット",
@@ -1025,10 +1025,10 @@ const I18N = {
     audioAvgComplex: "Complexe (garde la phase)",
     audioAvgMag: "Amplitude",
     audioSpectrum: "spectre moyen",
-    audioHarmBars: "harmoniques moyennes",
+    audioHarmBars: "harmoniques actuelles",
     audioPitchTrack: "hauteur",
     audioCurrentShape: "dessin actuel",
-    audioWaveform: "forme d’onde",
+    audioWaveform: "onde / y(t)",
     audioNoVoiced: "Aucun son à hauteur définie dans cet extrait",
     audioStats: (v, n) => `${v} / ${n} trames avec hauteur`,
     audioPresets: "Instruments",
@@ -1157,10 +1157,10 @@ const I18N = {
     audioAvgComplex: "Complejo (conserva fase)",
     audioAvgMag: "Magnitud",
     audioSpectrum: "espectro medio",
-    audioHarmBars: "armónicos medios",
+    audioHarmBars: "armónicos actuales",
     audioPitchTrack: "altura",
     audioCurrentShape: "dibujo actual",
-    audioWaveform: "onda",
+    audioWaveform: "onda / y(t)",
     audioNoVoiced: "No se encontró sonido con altura en este fragmento",
     audioStats: (v, n) => `${v} / ${n} tramas con altura`,
     audioPresets: "Instrumentos",
@@ -2668,7 +2668,9 @@ function harmonicsToCoeffs(hL, hR) {
     map.set(freq, c);
   };
   if (!hR) {
-    for (const a of hL) add(a.h, a.re, a.im);
+    // Rotate the analytic signal by 90° so the visible vertical coordinate is
+    // the original waveform: z(t) = -H{x}(t) + i·x(t).
+    for (const a of hL) add(a.h, -a.im, a.re);
   } else {
     for (let i = 0; i < hL.length; i++) {
       const a = hL[i], b = hR[i] || { re: 0, im: 0 };
@@ -2682,7 +2684,7 @@ function harmonicsToCoeffs(hL, hR) {
 // Shift time so the reference harmonic sits at phase 0. The curve itself is
 // unchanged, but every frame now starts at the same point of its period, so
 // frames can be averaged without their phases cancelling.
-function alignPhase(cs) {
+function alignPhaseWithShift(cs) {
   let ref = null;
   for (const c of cs) {
     const a = Math.hypot(c.re, c.im);
@@ -2690,14 +2692,17 @@ function alignPhase(cs) {
   }
   const fund = cs.find((c) => c.freq === 1);
   if (fund && ref && Math.hypot(fund.re, fund.im) > 0.25 * ref.a) ref = { c: fund };
-  if (!ref) return cs;
+  if (!ref) return { coeffs: cs, theta: 0 };
   const theta = Math.atan2(ref.c.im, ref.c.re) / ref.c.freq;
-  return cs.map((c) => {
+  const coeffs = cs.map((c) => {
     const rot = -c.freq * theta;
     const cr = Math.cos(rot), sn = Math.sin(rot);
     return { freq: c.freq, re: c.re * cr - c.im * sn, im: c.re * sn + c.im * cr };
   });
+  return { coeffs, theta };
 }
+
+function alignPhase(cs) { return alignPhaseWithShift(cs).coeffs; }
 
 const freqToMidi = (f) => 69 + 12 * Math.log2(f / 440);
 
@@ -2762,21 +2767,19 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
   });
   const gate = Math.max(0.003, 0.08 * Math.max(...levels));
 
-  const psd = new Float64Array(N >> 1);
-  const re = new Float64Array(N), im = new Float64Array(N);
   const acc = new Map();
   const track = [];
   const segments = [];
-  let wSum = 0, voiced = 0, loud = 0;
+  let wSum = 0, voiced = 0;
   const maxF = Math.min(1600, sr / 4);
   const waveformAt = (st, f0 = null) => {
     const out = new Float32Array(96);
-    const span = f0 ? Math.min(N, Math.max(out.length, (3 * sr) / f0)) : N;
-    const first = st + (N - span) / 2;
+    const span = f0 ? Math.min(N, Math.max(out.length, sr / f0)) : N;
+    const first = f0 ? st + N / 2 : st;
     for (let j = 0; j < out.length; j++) {
-      const p = first + (j / (out.length - 1)) * (span - 1);
-      const i = Math.floor(p), mix = p - i;
-      out[j] = X[i] + ((X[Math.min(X.length - 1, i + 1)] || 0) - X[i]) * mix;
+      const p = first + (j / out.length) * span;
+      const i = Math.max(0, Math.min(X.length - 1, Math.floor(p))), mix = p - Math.floor(p);
+      out[j] = X[i] + (X[Math.min(X.length - 1, i + 1)] - X[i]) * mix;
     }
     return out;
   };
@@ -2789,11 +2792,6 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
       segments.push({ t, midi: null, level: levels[fi], coeffs: null, waveform });
       return;
     }
-    loud++;
-    for (let i = 0; i < N; i++) { re[i] = X[st + i] * win[i]; im[i] = 0; }
-    fftInPlace(re, im);
-    for (let k = 0; k < N >> 1; k++) psd[k] += re[k] * re[k] + im[k] * im[k];
-
     const frame = X.subarray(st, st + N);
     const pitch = detectPitch(frame, sr, 55, maxF);
     if (!pitch || pitch.clarity < 0.6) {
@@ -2812,12 +2810,13 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
       return;
     }
     const midi = freqToMidi(pitch.freq);
-    waveform = waveformAt(st, pitch.freq);
     track.push({ t, midi });
 
     const hL = harmonicsAt(stereoXY && R ? L.subarray(st, st + N) : frame, win, sumW, sr, pitch.freq, K);
     const hR = stereoXY && R ? harmonicsAt(R.subarray(st, st + N), win, sumW, sr, pitch.freq, K) : null;
-    const cs = alignPhase(harmonicsToCoeffs(hL, hR));
+    const aligned = alignPhaseWithShift(harmonicsToCoeffs(hL, hR));
+    const cs = aligned.coeffs;
+    waveform = waveformAt(st, pitch.freq);
     let total = 0;
     for (const c of cs) total += Math.hypot(c.re, c.im);
     if (total < 1e-9) {
@@ -2841,13 +2840,9 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
     voiced++;
   });
 
-  const norm = 2 / sumW;
-  const spectrum = new Float32Array(N >> 1);
-  for (let k = 0; k < N >> 1; k++) spectrum[k] = 10 * Math.log10((loud ? psd[k] / loud : 0) * norm * norm + 1e-18);
-
   const midis = track.filter((p) => p.midi !== null).map((p) => p.midi).sort((a, b) => a - b);
   const info = {
-    sr, fftSize: N, hop, frames: starts.length, voiced, duration: buf.duration, spectrum, track, segments,
+    sr, fftSize: N, hop, frames: starts.length, voiced, duration: buf.duration, track, segments,
     medianMidi: midis.length ? midis[midis.length >> 1] : null,
   };
   if (!voiced) return { ...info, coeffs: null };
@@ -2865,6 +2860,24 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
     return { freq: c.freq, amp, phase: c.phase, re: amp * Math.cos(c.phase), im: amp * Math.sin(c.phase) };
   }).sort((a, b) => b.amp - a.amp);
   const peakLevel = Math.max(gate, ...segments.map((s) => s.level));
+  const alignWaveform = (wave, cs) => {
+    if (!wave || !cs || !cs.length) return wave;
+    const n = wave.length;
+    const reconstructed = Array.from({ length: n }, (_, i) => {
+      let y = 0;
+      for (const c of cs) y += c.amp * Math.sin(c.freq * 2 * Math.PI * i / n + c.phase);
+      return y;
+    });
+    let bestShift = 0, bestScore = -Infinity;
+    for (let shift = 0; shift < n; shift++) {
+      let score = 0;
+      for (let i = 0; i < n; i++) score += wave[(i + shift) % n] * reconstructed[i];
+      if (score > bestScore) { bestScore = score; bestShift = shift; }
+    }
+    const aligned = new Float32Array(n);
+    for (let i = 0; i < n; i++) aligned[i] = wave[(i + bestShift) % n];
+    return aligned;
+  };
   for (const seg of segments) {
     if (!seg.coeffs) continue;
     // Perceptual loudness scaling: silence approaches zero while ordinary
@@ -2874,6 +2887,7 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
       const re = c.re * scale, im = c.im * scale;
       return { freq: c.freq, re, im, amp: Math.hypot(re, im), phase: Math.atan2(im, re) };
     }).sort((a, b) => b.amp - a.amp);
+    seg.waveform = alignWaveform(seg.waveform, seg.coeffs);
   }
   return { ...info, coeffs };
 }
@@ -3171,11 +3185,11 @@ class AudioInput {
   }
 }
 
-// Result panel: averaged spectrum, averaged harmonics (the shape's recipe)
-// and the pitch track of the whole clip with a playhead.
+// Result panel: the current note's harmonics, the whole-clip pitch track, and
+// a direct comparison between the current curve and its source waveform.
 function ListenPanel({ result, theme, tr, pos, midiNow, visual, pitchColor }) {
   const ref = React.useRef(null);
-  const W = 260, H = 382;
+  const W = 260, H = 332;
   React.useEffect(() => {
     const c = ref.current;
     if (!c || !result) return;
@@ -3200,46 +3214,20 @@ function ListenPanel({ result, theme, tr, pos, midiNow, visual, pitchColor }) {
     ctx.fillText(`Δf ${(result.sr / result.fftSize).toFixed(1)} Hz`, W, 26);
     ctx.fillText(tr.audioStats(result.voiced, result.frames), W, 38);
     ctx.textAlign = 'left';
+    const liveColor = pitchColor || theme.trace;
 
-    // Averaged spectrum (log frequency)
-    const sy = 48, sh = 62;
+    // Harmonics of the note under the playhead (never a whole-clip average).
+    const hy = 48, hh = 62;
     ctx.strokeStyle = theme.grid;
     ctx.lineWidth = 1;
-    ctx.strokeRect(0.5, sy + 0.5, W - 1, sh);
-    const fMin = 40, fMax = result.sr / 2;
-    const fx = (f) => (Math.log(f / fMin) / Math.log(fMax / fMin)) * W;
-    const spec = result.spectrum, bins = spec.length, binHz = result.sr / result.fftSize;
-    let top = -200;
-    for (let b = 1; b < bins; b++) top = Math.max(top, spec[b]);
-    ctx.beginPath();
-    ctx.moveTo(0, sy + sh);
-    for (let px = 0; px <= W; px++) {
-      const f0 = fMin * Math.pow(fMax / fMin, px / W), f1 = fMin * Math.pow(fMax / fMin, (px + 1) / W);
-      let peak = -200;
-      for (let b = Math.floor(f0 / binHz); b <= Math.ceil(f1 / binHz) && b < bins; b++) peak = Math.max(peak, spec[b]);
-      const v = Math.max(0, Math.min(1, (peak - top + 70) / 70));
-      ctx.lineTo(px, sy + sh - v * (sh - 4));
-    }
-    ctx.lineTo(W, sy + sh);
-    ctx.closePath();
-    ctx.fillStyle = hexWithAlpha(theme.accent, 0.25);
-    ctx.fill();
-    ctx.strokeStyle = theme.accent;
-    ctx.stroke();
-    label(tr.audioSpectrum, 4, sy + 11);
-    for (const f of [100, 1000, 10000]) if (f < fMax) label(f >= 1000 ? `${f / 1000}k` : `${f}`, fx(f) + 2, sy + sh - 3);
-
-    // Averaged harmonics
-    const hy = sy + sh + 10, hh = 58;
-    ctx.strokeStyle = theme.grid;
     ctx.strokeRect(0.5, hy + 0.5, W - 1, hh);
     const byH = new Map();
-    for (const co of result.coeffs || []) byH.set(Math.abs(co.freq), (byH.get(Math.abs(co.freq)) || 0) + co.amp);
+    for (const co of (visual && visual.coeffs) || []) byH.set(Math.abs(co.freq), (byH.get(Math.abs(co.freq)) || 0) + co.amp);
     const hs = [...byH.keys()].sort((a, b) => a - b);
     const hMax = Math.max(1e-9, ...byH.values());
     const n = Math.max(1, hs.length ? hs[hs.length - 1] : 1);
     const bw = (W - 8) / n;
-    ctx.fillStyle = theme.trace;
+    ctx.fillStyle = liveColor;
     for (const h of hs) {
       const v = byH.get(h) / hMax;
       ctx.fillRect(4 + (h - 1) * bw + 1, hy + hh - 2 - v * (hh - 16), Math.max(1, bw - 2), v * (hh - 16));
@@ -3295,7 +3283,6 @@ function ListenPanel({ result, theme, tr, pos, midiNow, visual, pitchColor }) {
     ctx.strokeRect(cw + gap + 0.5, cy + 0.5, cw - 1, ch);
     label(tr.audioCurrentShape, 4, cy + 11);
     label(tr.audioWaveform, cw + gap + 4, cy + 11);
-    const liveColor = pitchColor || theme.trace;
     if (visual && visual.coeffs && visual.coeffs.length) {
       ctx.save();
       ctx.translate(cw / 2, cy + ch / 2 + 5);
@@ -3318,15 +3305,32 @@ function ListenPanel({ result, theme, tr, pos, midiNow, visual, pitchColor }) {
       ctx.strokeStyle = theme.gridStrong;
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x0 + 4, midY); ctx.lineTo(W - 4, midY); ctx.stroke();
-      ctx.strokeStyle = liveColor;
-      ctx.lineWidth = 1.5;
+      const wavePeak = Math.max(1e-9, ...wave.map((v) => Math.abs(v)));
+      ctx.strokeStyle = theme.muted;
+      ctx.setLineDash([3, 2]);
+      ctx.lineWidth = 1;
       ctx.beginPath();
       for (let i = 0; i < wave.length; i++) {
         const x = x0 + 4 + (i / (wave.length - 1)) * (cw - 8);
-        const y = midY - wave[i] * (ch * 0.42);
+        const y = midY - (wave[i] / wavePeak) * (ch * 0.36);
         if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
       }
       ctx.stroke();
+      ctx.setLineDash([]);
+      if (visual.coeffs && visual.coeffs.length) {
+        const reconstructed = Array.from({ length: wave.length }, (_, i) =>
+          fourierTip(visual.coeffs, i / wave.length, visual.coeffs.length).y);
+        const reconPeak = Math.max(1e-9, ...reconstructed.map((v) => Math.abs(v)));
+        ctx.strokeStyle = liveColor;
+        ctx.lineWidth = 1.7;
+        ctx.beginPath();
+        for (let i = 0; i < reconstructed.length; i++) {
+          const x = x0 + 4 + (i / (reconstructed.length - 1)) * (cw - 8);
+          const y = midY - (reconstructed[i] / reconPeak) * (ch * 0.36);
+          if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+      }
     }
   }, [result, theme, tr, pos, midiNow, visual, pitchColor]);
   if (!result) return null;
@@ -4105,15 +4109,8 @@ function App() {
           <div style={{
             fontFamily: 'JetBrains Mono, monospace',
             fontSize: 9, letterSpacing: 3, color: theme.muted,
-            textTransform: 'uppercase', marginBottom: 4,
+            textTransform: 'uppercase', marginBottom: 14,
           }}>Fourier Canvas</div>
-          <div style={{
-            fontFamily: 'Newsreader, ui-serif, Georgia, serif',
-            fontSize: 20, lineHeight: 1.2,
-            fontWeight: 400, letterSpacing: -0.4, marginBottom: 14,
-          }}>
-            <em style={{ fontStyle: 'italic' }}>f</em>(t) = <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 16 }}>Σ cₙ e<sup style={{ fontSize: 9 }}>i2πnt</sup></span>
-          </div>
           {/* Mode toggle */}
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(6, auto)',
@@ -4139,9 +4136,11 @@ function App() {
           display: 'flex', flexDirection: 'column', gap: 20,
         }}>
         {/* Description */}
-        <div style={{ fontSize: 12, color: theme.muted, lineHeight: 1.5 }}>
-          {mode === 'draw' ? tr.tagline : mode === 'morph' ? tr.taglineMorph : mode === 'image' ? tr.imageHint : mode === '3d' ? tr.tagline3d : mode === 'audio' ? tr.taglineAudio : tr.taglineStudio}
-        </div>
+        {mode !== 'audio' && (
+          <div style={{ fontSize: 12, color: theme.muted, lineHeight: 1.5 }}>
+            {mode === 'draw' ? tr.tagline : mode === 'morph' ? tr.taglineMorph : mode === 'image' ? tr.imageHint : mode === '3d' ? tr.tagline3d : tr.taglineStudio}
+          </div>
+        )}
 
         {mode === 'studio' && (
           <VectorStudio vectors={vectors} setVectors={setVectors} theme={theme} tr={tr} />
