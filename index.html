@@ -630,6 +630,8 @@ const I18N = {
     audioSpectrum: "avg spectrum",
     audioHarmBars: "avg harmonics",
     audioPitchTrack: "pitch",
+    audioCurrentShape: "current drawing",
+    audioWaveform: "waveform",
     audioNoVoiced: "No pitched sound found in this clip",
     audioStats: (v, n) => `${v} / ${n} frames pitched`,
     audioPresets: "Instrument presets",
@@ -761,6 +763,8 @@ const I18N = {
     audioSpectrum: "平均频谱",
     audioHarmBars: "平均谐波",
     audioPitchTrack: "音高",
+    audioCurrentShape: "本轮图像",
+    audioWaveform: "波形",
     audioNoVoiced: "这段音频里没有检测到有音高的声音",
     audioStats: (v, n) => `${v} / ${n} 帧有音高`,
     audioPresets: "乐器预设",
@@ -891,6 +895,8 @@ const I18N = {
     audioSpectrum: "平均スペクトル",
     audioHarmBars: "平均倍音",
     audioPitchTrack: "音高",
+    audioCurrentShape: "現在の図形",
+    audioWaveform: "波形",
     audioNoVoiced: "このクリップには音高のある音が見つかりません",
     audioStats: (v, n) => `${v} / ${n} フレームに音高`,
     audioPresets: "楽器プリセット",
@@ -1021,6 +1027,8 @@ const I18N = {
     audioSpectrum: "spectre moyen",
     audioHarmBars: "harmoniques moyennes",
     audioPitchTrack: "hauteur",
+    audioCurrentShape: "dessin actuel",
+    audioWaveform: "forme d’onde",
     audioNoVoiced: "Aucun son à hauteur définie dans cet extrait",
     audioStats: (v, n) => `${v} / ${n} trames avec hauteur`,
     audioPresets: "Instruments",
@@ -1151,6 +1159,8 @@ const I18N = {
     audioSpectrum: "espectro medio",
     audioHarmBars: "armónicos medios",
     audioPitchTrack: "altura",
+    audioCurrentShape: "dibujo actual",
+    audioWaveform: "onda",
     audioNoVoiced: "No se encontró sonido con altura en este fragmento",
     audioStats: (v, n) => `${v} / ${n} tramas con altura`,
     audioPresets: "Instrumentos",
@@ -2759,12 +2769,24 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
   const segments = [];
   let wSum = 0, voiced = 0, loud = 0;
   const maxF = Math.min(1600, sr / 4);
+  const waveformAt = (st, f0 = null) => {
+    const out = new Float32Array(96);
+    const span = f0 ? Math.min(N, Math.max(out.length, (3 * sr) / f0)) : N;
+    const first = st + (N - span) / 2;
+    for (let j = 0; j < out.length; j++) {
+      const p = first + (j / (out.length - 1)) * (span - 1);
+      const i = Math.floor(p), mix = p - i;
+      out[j] = X[i] + ((X[Math.min(X.length - 1, i + 1)] || 0) - X[i]) * mix;
+    }
+    return out;
+  };
 
   starts.forEach((st, fi) => {
     const t = (st + N / 2) / sr;
+    let waveform = waveformAt(st);
     if (levels[fi] < gate) {
       track.push({ t, midi: null });
-      segments.push({ t, midi: null, level: levels[fi], coeffs: null });
+      segments.push({ t, midi: null, level: levels[fi], coeffs: null, waveform });
       return;
     }
     loud++;
@@ -2776,7 +2798,7 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
     const pitch = detectPitch(frame, sr, 55, maxF);
     if (!pitch || pitch.clarity < 0.6) {
       track.push({ t, midi: null });
-      segments.push({ t, midi: null, level: levels[fi], coeffs: null });
+      segments.push({ t, midi: null, level: levels[fi], coeffs: null, waveform });
       return;
     }
     // Skip frames that straddle two notes: both halves must agree on the pitch
@@ -2786,10 +2808,11 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
     const off = (q) => !q || Math.abs(12 * Math.log2(q.freq / pitch.freq)) > 0.5;
     if (off(a1) || off(a2)) {
       track.push({ t, midi: null });
-      segments.push({ t, midi: null, level: levels[fi], coeffs: null });
+      segments.push({ t, midi: null, level: levels[fi], coeffs: null, waveform });
       return;
     }
     const midi = freqToMidi(pitch.freq);
+    waveform = waveformAt(st, pitch.freq);
     track.push({ t, midi });
 
     const hL = harmonicsAt(stereoXY && R ? L.subarray(st, st + N) : frame, win, sumW, sr, pitch.freq, K);
@@ -2798,13 +2821,13 @@ function analyzeClip(buf, { fftSize = 4096, K = 16, method = 'complex', stereoXY
     let total = 0;
     for (const c of cs) total += Math.hypot(c.re, c.im);
     if (total < 1e-9) {
-      segments.push({ t, midi, level: levels[fi], coeffs: null });
+      segments.push({ t, midi, level: levels[fi], coeffs: null, waveform });
       return;
     }
     // Keep each window's Fourier drawing. Its final scale is applied after we
     // know the loudest window, so visual size carries loudness consistently.
     segments.push({
-      t, midi, level: levels[fi],
+      t, midi, level: levels[fi], waveform,
       coeffs: cs.map((c) => ({ freq: c.freq, re: c.re / total, im: c.im / total })),
     });
     // Each frame's shape is normalised, then weighted by how loud the frame is
@@ -2869,6 +2892,27 @@ function blendAudioCoeffs(a, b, mix) {
     const im = x.im + (y.im - x.im) * mix;
     return { freq, re, im, amp: Math.hypot(re, im), phase: Math.atan2(im, re) };
   }).filter((c) => c.amp > 0.01).sort((x, y) => y.amp - x.amp);
+}
+
+function blendAudioWaveform(a, b, mix) {
+  const n = Math.max(a ? a.length : 0, b ? b.length : 0);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = a && i < a.length ? a[i] : 0;
+    const y = b && i < b.length ? b[i] : 0;
+    out[i] = x + (y - x) * mix;
+  }
+  return out;
+}
+
+// C3 and C5 are the colour anchors requested for Listen mode. Notes between
+// them use direct RGB interpolation; notes outside the range stay at the
+// nearest endpoint colour.
+function audioPitchToColor(midi) {
+  if (midi == null) return null;
+  const t = Math.max(0, Math.min(1, (midi - 48) / 24));
+  const lerp = (a, b) => Math.round(a + (b - a) * t);
+  return `rgb(${lerp(155, 255)}, ${lerp(60, 232)}, ${lerp(20, 120)})`;
 }
 
 // ── Instrument presets ───────────────────────────────────────────────────
@@ -3129,9 +3173,9 @@ class AudioInput {
 
 // Result panel: averaged spectrum, averaged harmonics (the shape's recipe)
 // and the pitch track of the whole clip with a playhead.
-function ListenPanel({ result, theme, tr, pos, midiNow }) {
+function ListenPanel({ result, theme, tr, pos, midiNow, visual, pitchColor }) {
   const ref = React.useRef(null);
-  const W = 260, H = 272;
+  const W = 260, H = 382;
   React.useEffect(() => {
     const c = ref.current;
     if (!c || !result) return;
@@ -3203,7 +3247,7 @@ function ListenPanel({ result, theme, tr, pos, midiNow }) {
     label(tr.audioHarmBars, 4, hy + 11);
 
     // Pitch track over the clip
-    const py = hy + hh + 10, ph = H - py - 1;
+    const py = hy + hh + 10, ph = 82;
     ctx.strokeStyle = theme.grid;
     ctx.strokeRect(0.5, py + 0.5, W - 1, ph);
     const notes = result.track.filter((p) => p.midi !== null).map((p) => p.midi);
@@ -3240,7 +3284,51 @@ function ListenPanel({ result, theme, tr, pos, midiNow }) {
         ctx.fillRect(Math.round(xOf(pos)), py + 1, 1.5, ph - 1);
       }
     }
-  }, [result, theme, tr, pos, midiNow]);
+
+    // Current analysis window: the Fourier drawing beside the time-domain
+    // waveform that produced it, both using fixed scales so loudness remains
+    // visible rather than being normalised away.
+    const cy = py + ph + 10, ch = H - cy - 1, gap = 8, cw = (W - gap) / 2;
+    ctx.strokeStyle = theme.grid;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, cy + 0.5, cw - 1, ch);
+    ctx.strokeRect(cw + gap + 0.5, cy + 0.5, cw - 1, ch);
+    label(tr.audioCurrentShape, 4, cy + 11);
+    label(tr.audioWaveform, cw + gap + 4, cy + 11);
+    const liveColor = pitchColor || theme.trace;
+    if (visual && visual.coeffs && visual.coeffs.length) {
+      ctx.save();
+      ctx.translate(cw / 2, cy + ch / 2 + 5);
+      ctx.scale(0.22, 0.22);
+      ctx.strokeStyle = liveColor;
+      ctx.lineWidth = 7;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      for (let i = 0; i <= 240; i++) {
+        const p = fourierTip(visual.coeffs, i / 240, visual.coeffs.length);
+        if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+    const wave = visual && visual.waveform;
+    if (wave && wave.length) {
+      const x0 = cw + gap, midY = cy + ch / 2 + 5;
+      ctx.strokeStyle = theme.gridStrong;
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x0 + 4, midY); ctx.lineTo(W - 4, midY); ctx.stroke();
+      ctx.strokeStyle = liveColor;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i < wave.length; i++) {
+        const x = x0 + 4 + (i / (wave.length - 1)) * (cw - 8);
+        const y = midY - wave[i] * (ch * 0.42);
+        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }, [result, theme, tr, pos, midiNow, visual, pitchColor]);
   if (!result) return null;
   return (
     <div style={{
@@ -3556,14 +3644,13 @@ function App() {
     const mb = b.midi == null ? ma : b.midi;
     const midi = ma == null ? audioResult.medianMidi : ma + (mb - ma) * mix;
     const level = a.level + (b.level - a.level) * mix;
-    return { coeffs, midi, level };
+    const waveform = blendAudioWaveform(a.waveform, b.waveform, mix);
+    return { coeffs, midi, level, waveform };
   }, [audioResult, audioPos]);
   const audioCoeffs = audioVisual ? audioVisual.coeffs : (audioResult ? audioResult.coeffs : null);
   const audioPitchColor = useMemo(() => {
     const midi = audioVisual ? audioVisual.midi : (audioResult && audioResult.medianMidi);
-    if (midi == null) return null;
-    const hue = 260 - Math.max(0, Math.min(1, (midi - 36) / 60)) * 260;
-    return `hsl(${hue.toFixed(1)} 82% 52%)`;
+    return audioPitchToColor(midi);
   }, [audioVisual, audioResult]);
   const [recInfo, setRecInfo] = useState(null);            // { start, t, level } while recording
   const [instKey, setInstKey] = useState(null);            // active instrument preset
@@ -4716,7 +4803,8 @@ function App() {
         {/* Listen result: averaged spectrum, harmonics, pitch track */}
         {mode === 'audio' && audioResult && (
           <div style={{ position: 'absolute', top: 52, left: 20, zIndex: 3 }}>
-            <ListenPanel result={audioResult} theme={theme} tr={tr} pos={audioPos} midiNow={audioMidiNow} />
+            <ListenPanel result={audioResult} theme={theme} tr={tr} pos={audioPos} midiNow={audioMidiNow}
+              visual={audioVisual} pitchColor={audioPitchColor} />
           </div>
         )}
 
