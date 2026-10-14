@@ -640,7 +640,7 @@ const I18N = {
     audioSlow: "Slow-down",
     audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} loops/s`,
     audioFollowHint: "The real waveform turns once per period, hundreds of times a second, so the drawing is slowed down by this factor. While the clip plays, it follows the current note: an octave up spins twice as fast.",
-    inst: {sine: "Tuning fork", flute: "Flute", clarinet: "Clarinet", oboe: "Oboe", trumpet: "Trumpet", violin: "Violin", voice: "Voice “ah”", organ: "Organ", piano: "Piano", guitar: "Guitar", square: "Square wave", sawtooth: "Sawtooth", bell: "Bell"},
+    inst: {sine: "Tuning fork", flute: "Flute", clarinet: "Clarinet", oboe: "Oboe", trumpet: "Trumpet", violin: "Violin", voice: "Voice “ah”", organ: "Organ", piano: "Piano", guitar: "Guitar", square: "Square wave", bell: "Bell"},
     audioEmpty: "Record or drop an audio clip",
     dropAudio: "Drop an audio file",
     myImage: "My image",
@@ -773,7 +773,7 @@ const I18N = {
     audioSlow: "放慢倍数",
     audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} 圈/秒`,
     audioFollowHint: "真实波形每个周期转一圈，每秒几百圈，所以按这个倍数放慢来画。播放时速度跟随当前的音：高八度就转得快一倍。",
-    inst: {sine: "音叉", flute: "长笛", clarinet: "单簧管", oboe: "双簧管", trumpet: "小号", violin: "小提琴", voice: "人声“啊”", organ: "管风琴", piano: "钢琴", guitar: "吉他", square: "方波", sawtooth: "锯齿波", bell: "钟"},
+    inst: {sine: "音叉", flute: "长笛", clarinet: "单簧管", oboe: "双簧管", trumpet: "小号", violin: "小提琴", voice: "人声“啊”", organ: "管风琴", piano: "钢琴", guitar: "吉他", square: "方波", bell: "钟"},
     audioEmpty: "录一段音，或拖入音频文件",
     dropAudio: "拖入音频文件",
     myImage: "我的图片",
@@ -905,7 +905,7 @@ const I18N = {
     audioSlow: "スロー倍率",
     audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} 周/秒`,
     audioFollowHint: "実際の波形は1周期で1周し、毎秒数百周します。そのためこの倍率で遅くして描きます。再生中は今の音に追従し、1オクターブ上なら2倍の速さで回ります。",
-    inst: {sine: "音叉", flute: "フルート", clarinet: "クラリネット", oboe: "オーボエ", trumpet: "トランペット", violin: "バイオリン", voice: "声「あ」", organ: "オルガン", piano: "ピアノ", guitar: "ギター", square: "矩形波", sawtooth: "ノコギリ波", bell: "鐘"},
+    inst: {sine: "音叉", flute: "フルート", clarinet: "クラリネット", oboe: "オーボエ", trumpet: "トランペット", violin: "バイオリン", voice: "声「あ」", organ: "オルガン", piano: "ピアノ", guitar: "ギター", square: "矩形波", bell: "鐘"},
     audioEmpty: "録音するか、音声ファイルをドロップ",
     dropAudio: "音声ファイルをドロップ",
     myImage: "自分の画像",
@@ -1037,7 +1037,7 @@ const I18N = {
     audioSlow: "Ralenti",
     audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} tours/s`,
     audioFollowHint: "L'onde réelle fait un tour par période, des centaines de fois par seconde ; le tracé est donc ralenti de ce facteur. Pendant la lecture, il suit la note jouée : une octave plus haut tourne deux fois plus vite.",
-    inst: {sine: "Diapason", flute: "Flûte", clarinet: "Clarinette", oboe: "Hautbois", trumpet: "Trompette", violin: "Violon", voice: "Voix « a »", organ: "Orgue", piano: "Piano", guitar: "Guitare", square: "Carré", sawtooth: "Dent de scie", bell: "Cloche"},
+    inst: {sine: "Diapason", flute: "Flûte", clarinet: "Clarinette", oboe: "Hautbois", trumpet: "Trompette", violin: "Violon", voice: "Voix « a »", organ: "Orgue", piano: "Piano", guitar: "Guitare", square: "Carré", bell: "Cloche"},
     audioEmpty: "Enregistrez ou déposez un extrait audio",
     dropAudio: "Déposez un fichier audio",
     myImage: "Mon image",
@@ -1169,7 +1169,7 @@ const I18N = {
     audioSlow: "Ralentización",
     audioSpeedNow: (n, hz, l) => `${n} · ${hz} Hz → ${l} vueltas/s`,
     audioFollowHint: "La onda real da una vuelta por periodo, cientos de veces por segundo, así que el dibujo se ralentiza por este factor. Durante la reproducción sigue la nota actual: una octava más arriba gira el doble de rápido.",
-    inst: {sine: "Diapasón", flute: "Flauta", clarinet: "Clarinete", oboe: "Oboe", trumpet: "Trompeta", violin: "Violín", voice: "Voz «a»", organ: "Órgano", piano: "Piano", guitar: "Guitarra", square: "Cuadrada", sawtooth: "Diente de sierra", bell: "Campana"},
+    inst: {sine: "Diapasón", flute: "Flauta", clarinet: "Clarinete", oboe: "Oboe", trumpet: "Trompeta", violin: "Violín", voice: "Voz «a»", organ: "Órgano", piano: "Piano", guitar: "Guitarra", square: "Cuadrada", bell: "Campana"},
     audioEmpty: "Graba o suelta un fragmento de audio",
     dropAudio: "Suelta un archivo de audio",
     myImage: "Mi imagen",
@@ -2952,7 +2952,6 @@ const INSTRUMENTS = {
   piano:    { amps: [1, 0.55, 0.38, 0.24, 0.16, 0.12, 0.08, 0.06, 0.04, 0.03, 0.02], inharm: 0.0004, decay: [1.6, 0.45], attack: 0.004 },
   guitar:   { pluck: true },
   square:   { spec: (h) => (h % 2 ? 1 / h : 0), n: 25, zeroPhase: true },
-  sawtooth: { spec: (h) => 1 / h, n: 25, zeroPhase: true },
   bell:     { partials: [[0.5, 0.5], [1, 1], [1.183, 0.6], [1.506, 0.45], [2, 0.5], [2.514, 0.25], [2.662, 0.2], [3.011, 0.15], [4.166, 0.1]], decay: [1.1, 0.5], attack: 0.003 },
 };
 
@@ -3282,7 +3281,7 @@ function AudioComparisonCanvas({ theme, tr, visual, pitchColor, speed, playing }
       ctx.clearRect(0, 0, dims.w, dims.h);
 
       const pad = Math.max(28, Math.min(64, dims.w * 0.05));
-      const top = 150, bottom = 36, gap = Math.max(24, dims.w * 0.035);
+      const top = 120, bottom = 36, gap = Math.max(24, dims.w * 0.035);
       const totalW = Math.max(200, dims.w - 2 * pad);
       const panelW = (totalW - gap) / 2;
       const panelH = Math.max(180, dims.h - top - bottom);
@@ -3294,11 +3293,6 @@ function AudioComparisonCanvas({ theme, tr, visual, pitchColor, speed, playing }
       ctx.lineWidth = 1;
       ctx.strokeRect(leftX + 0.5, top + 0.5, panelW - 1, panelH - 1);
       ctx.strokeRect(rightX + 0.5, top + 0.5, panelW - 1, panelH - 1);
-      ctx.fillStyle = theme.muted;
-      ctx.font = `10px ${mono}`;
-      ctx.fillText(tr.audioCurrentShape, leftX + 8, top + 16);
-      ctx.fillText(tr.audioWaveform, rightX + 8, top + 16);
-
       const shapeX = leftX + panelW / 2;
       const drawScale = Math.min((panelW - 48) / 440, (panelH - 54) / 440);
       ctx.strokeStyle = theme.gridStrong;
@@ -4359,7 +4353,6 @@ function App() {
               </button>
             ))}
           </div>
-          <div style={{ fontSize: 11, color: theme.muted, lineHeight: 1.5, marginTop: 8 }}>{tr.audioPresetHint}</div>
         </section>
         <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <SectionLabel theme={theme}>{tr.audioAnalysis}</SectionLabel>
@@ -4861,7 +4854,7 @@ function App() {
 
         {/* Listen result: current pitch and harmonics */}
         {mode === 'audio' && audioResult && (
-          <div style={{ position: 'absolute', top: 52, left: 20, zIndex: 3 }}>
+          <div style={{ position: 'absolute', top: 14, left: 20, zIndex: 3 }}>
             <ListenPanel result={audioResult} theme={theme} tr={tr}
               visual={audioVisual} pitchColor={audioPitchColor} />
           </div>
