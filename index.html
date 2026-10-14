@@ -3190,9 +3190,9 @@ class AudioInput {
 
 // Result panel: current pitch + harmonics, and a direct comparison between the
 // current epicycle system and its source waveform.
-function ListenPanel({ result, theme, tr, visual, pitchColor, phase = 0 }) {
+function ListenPanel({ result, theme, tr, visual, pitchColor }) {
   const ref = React.useRef(null);
-  const W = 380, H = 300;
+  const W = 380, H = 72;
   React.useEffect(() => {
     const c = ref.current;
     if (!c || !result) return;
@@ -3233,105 +3233,7 @@ function ListenPanel({ result, theme, tr, visual, pitchColor, phase = 0 }) {
     }
     label(tr.audioHarmBars, pitchW + 5, hy + 11);
 
-    // Enlarged current-window comparison. The left side shows the complete
-    // epicycle system with axes; the right side overlays the source waveform
-    // and reconstructed y(t). Both use one vertical scale.
-    const cy = hy + hh + 10, ch = H - cy - 1, gap = 12, cw = (W - gap) / 2;
-    ctx.strokeStyle = theme.grid;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0.5, cy + 0.5, cw - 1, ch);
-    ctx.strokeRect(cw + gap + 0.5, cy + 0.5, cw - 1, ch);
-    label(tr.audioCurrentShape, 4, cy + 11);
-    label(tr.audioWaveform, cw + gap + 4, cy + 11);
-    const midY = cy + ch / 2 + 6, shapeX = cw / 2, waveX = cw + gap;
-    const drawScale = Math.min((cw - 24) / 440, (ch - 28) / 440);
-    ctx.strokeStyle = theme.gridStrong;
-    ctx.beginPath();
-    ctx.moveTo(8, midY + 0.5); ctx.lineTo(cw - 8, midY + 0.5);
-    ctx.moveTo(shapeX + 0.5, cy + 18); ctx.lineTo(shapeX + 0.5, cy + ch - 8);
-    ctx.stroke();
-
-    const cs = (visual && visual.coeffs) || [];
-    const cycleT = ((phase % 1) + 1) % 1;
-    let endpoint = null;
-    if (cs.length) {
-      // Closed curve.
-      ctx.strokeStyle = liveColor;
-      ctx.lineWidth = 1.8;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      for (let i = 0; i <= 300; i++) {
-        const p = fourierTip(cs, i / 300, cs.length);
-        const x = shapeX + p.x * drawScale, y = midY - p.y * drawScale;
-        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-      }
-      ctx.stroke();
-
-      // Epicycle circles, vectors and current endpoint.
-      const tips = evalFourier(cs, cycleT, cs.length);
-      for (let i = 0; i < tips.length - 1; i++) {
-        const a = tips[i], b = tips[i + 1];
-        const ax = shapeX + a.x * drawScale, ay = midY - a.y * drawScale;
-        const bx = shapeX + b.x * drawScale, by = midY - b.y * drawScale;
-        const radius = Math.hypot(b.x - a.x, b.y - a.y) * drawScale;
-        ctx.strokeStyle = theme.circle;
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(ax, ay, radius, 0, Math.PI * 2); ctx.stroke();
-        ctx.strokeStyle = theme.vector;
-        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
-      }
-      const tip = tips[tips.length - 1];
-      endpoint = { x: shapeX + tip.x * drawScale, y: midY - tip.y * drawScale };
-      ctx.fillStyle = liveColor;
-      ctx.beginPath(); ctx.arc(endpoint.x, endpoint.y, 3.5, 0, Math.PI * 2); ctx.fill();
-    }
-    const wave = visual && visual.waveform;
-    if (wave && wave.length) {
-      ctx.strokeStyle = theme.gridStrong;
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(waveX + 6, midY); ctx.lineTo(W - 6, midY); ctx.stroke();
-      const wavePeak = Math.max(1e-9, ...wave.map((v) => Math.abs(v)));
-      const reconstructed = cs.length
-        ? Array.from({ length: wave.length }, (_, i) => fourierTip(cs, i / wave.length, cs.length).y)
-        : [];
-      const reconPeak = reconstructed.length ? Math.max(1e-9, ...reconstructed.map((v) => Math.abs(v))) : 1;
-      ctx.strokeStyle = theme.muted;
-      ctx.setLineDash([3, 2]);
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let i = 0; i < wave.length; i++) {
-        const x = waveX + 6 + (i / (wave.length - 1)) * (cw - 12);
-        const y = midY - (wave[i] / wavePeak) * reconPeak * drawScale;
-        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-      }
-      ctx.stroke();
-      ctx.setLineDash([]);
-      if (reconstructed.length) {
-        ctx.strokeStyle = liveColor;
-        ctx.lineWidth = 1.7;
-        ctx.beginPath();
-        for (let i = 0; i < reconstructed.length; i++) {
-          const x = waveX + 6 + (i / (reconstructed.length - 1)) * (cw - 12);
-          const y = midY - reconstructed[i] * drawScale;
-          if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-        }
-        ctx.stroke();
-
-        // Same y(t) on both sides: connect the epicycle endpoint horizontally
-        // to the corresponding location on the waveform.
-        const markerX = waveX + 6 + cycleT * (cw - 12);
-        const markerY = endpoint ? endpoint.y : midY;
-        ctx.strokeStyle = liveColor;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 3]);
-        ctx.beginPath(); ctx.moveTo(endpoint ? endpoint.x : cw - 8, markerY); ctx.lineTo(markerX, markerY); ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = liveColor;
-        ctx.beginPath(); ctx.arc(markerX, markerY, 3, 0, Math.PI * 2); ctx.fill();
-      }
-    }
-  }, [result, theme, tr, visual, pitchColor, phase]);
+  }, [result, theme, tr, visual, pitchColor]);
   if (!result) return null;
   return (
     <div style={{
@@ -3343,7 +3245,154 @@ function ListenPanel({ result, theme, tr, visual, pitchColor, phase = 0 }) {
   );
 }
 
-Object.assign(window, { fftInPlace, detectPitch, harmonicsAt, harmonicsToCoeffs, alignPhase, resampleBuffer, analyzeClip, AudioInput, ListenPanel, INSTRUMENTS, synthInstrument, monoClip, shapeThumbPath });
+// In Listen mode the main canvas is the explanatory comparison itself: the
+// epicycle system on the left and the matching waveform on the right.
+function AudioComparisonCanvas({ theme, tr, visual, pitchColor, speed, playing }) {
+  const canvasRef = React.useRef(null);
+  const hostRef = React.useRef(null);
+  const phaseRef = React.useRef(0);
+  const [dims, setDims] = React.useState({ w: 800, h: 600 });
+
+  React.useEffect(() => {
+    const el = hostRef.current;
+    if (!el) return;
+    const resize = () => {
+      const r = el.getBoundingClientRect();
+      setDims({ w: Math.max(1, Math.floor(r.width)), h: Math.max(1, Math.floor(r.height)) });
+    };
+    const ro = new ResizeObserver(resize);
+    ro.observe(el); resize();
+    return () => ro.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = dims.w * dpr; canvas.height = dims.h * dpr;
+    canvas.style.width = `${dims.w}px`; canvas.style.height = `${dims.h}px`;
+    const ctx = canvas.getContext('2d');
+    let raf = 0, last = 0;
+
+    const draw = (ts) => {
+      const dt = last ? Math.min(0.05, (ts - last) / 1000) : 0;
+      last = ts;
+      if (playing) phaseRef.current = (phaseRef.current + dt * speed) % 1;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, dims.w, dims.h);
+
+      const pad = Math.max(28, Math.min(64, dims.w * 0.05));
+      const top = 150, bottom = 36, gap = Math.max(24, dims.w * 0.035);
+      const totalW = Math.max(200, dims.w - 2 * pad);
+      const panelW = (totalW - gap) / 2;
+      const panelH = Math.max(180, dims.h - top - bottom);
+      const leftX = pad, rightX = pad + panelW + gap, midY = top + panelH / 2;
+      const liveColor = pitchColor || theme.trace;
+      const mono = '"JetBrains Mono", monospace';
+
+      ctx.strokeStyle = theme.grid;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(leftX + 0.5, top + 0.5, panelW - 1, panelH - 1);
+      ctx.strokeRect(rightX + 0.5, top + 0.5, panelW - 1, panelH - 1);
+      ctx.fillStyle = theme.muted;
+      ctx.font = `10px ${mono}`;
+      ctx.fillText(tr.audioCurrentShape, leftX + 8, top + 16);
+      ctx.fillText(tr.audioWaveform, rightX + 8, top + 16);
+
+      const shapeX = leftX + panelW / 2;
+      const drawScale = Math.min((panelW - 48) / 440, (panelH - 54) / 440);
+      ctx.strokeStyle = theme.gridStrong;
+      ctx.beginPath();
+      ctx.moveTo(leftX + 16, midY + 0.5); ctx.lineTo(leftX + panelW - 16, midY + 0.5);
+      ctx.moveTo(shapeX + 0.5, top + 26); ctx.lineTo(shapeX + 0.5, top + panelH - 16);
+      ctx.stroke();
+
+      const cs = (visual && visual.coeffs) || [];
+      const cycleT = phaseRef.current;
+      let endpoint = null;
+      if (cs.length) {
+        ctx.strokeStyle = liveColor;
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath();
+        for (let i = 0; i <= 500; i++) {
+          const p = fourierTip(cs, i / 500, cs.length);
+          const x = shapeX + p.x * drawScale, y = midY - p.y * drawScale;
+          if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+
+        const tips = evalFourier(cs, cycleT, cs.length);
+        for (let i = 0; i < tips.length - 1; i++) {
+          const a = tips[i], b = tips[i + 1];
+          const ax = shapeX + a.x * drawScale, ay = midY - a.y * drawScale;
+          const bx = shapeX + b.x * drawScale, by = midY - b.y * drawScale;
+          const radius = Math.hypot(b.x - a.x, b.y - a.y) * drawScale;
+          ctx.strokeStyle = theme.circle;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(ax, ay, radius, 0, Math.PI * 2); ctx.stroke();
+          ctx.strokeStyle = theme.vector;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+        }
+        const tip = tips[tips.length - 1];
+        endpoint = { x: shapeX + tip.x * drawScale, y: midY - tip.y * drawScale };
+        ctx.fillStyle = liveColor;
+        ctx.beginPath(); ctx.arc(endpoint.x, endpoint.y, 4, 0, Math.PI * 2); ctx.fill();
+      }
+
+      const wave = visual && visual.waveform;
+      if (wave && wave.length) {
+        ctx.strokeStyle = theme.gridStrong;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(rightX + 16, midY); ctx.lineTo(rightX + panelW - 16, midY); ctx.stroke();
+        const wavePeak = Math.max(1e-9, ...wave.map((v) => Math.abs(v)));
+        const reconstructed = cs.length
+          ? Array.from({ length: wave.length }, (_, i) => fourierTip(cs, i / wave.length, cs.length).y)
+          : [];
+        const reconPeak = reconstructed.length ? Math.max(1e-9, ...reconstructed.map((v) => Math.abs(v))) : 1;
+        const xAt = (i, n) => rightX + 16 + (i / Math.max(1, n - 1)) * (panelW - 32);
+
+        ctx.strokeStyle = theme.muted;
+        ctx.setLineDash([4, 3]); ctx.lineWidth = 1.2; ctx.beginPath();
+        for (let i = 0; i < wave.length; i++) {
+          const x = xAt(i, wave.length), y = midY - (wave[i] / wavePeak) * reconPeak * drawScale;
+          if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        }
+        ctx.stroke(); ctx.setLineDash([]);
+
+        if (reconstructed.length) {
+          ctx.strokeStyle = liveColor;
+          ctx.lineWidth = 2.2; ctx.beginPath();
+          for (let i = 0; i < reconstructed.length; i++) {
+            const x = xAt(i, reconstructed.length), y = midY - reconstructed[i] * drawScale;
+            if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+          }
+          ctx.stroke();
+          const markerX = rightX + 16 + cycleT * (panelW - 32);
+          const markerY = endpoint ? endpoint.y : midY;
+          ctx.strokeStyle = liveColor;
+          ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+          ctx.beginPath(); ctx.moveTo(endpoint ? endpoint.x : leftX + panelW - 16, markerY); ctx.lineTo(markerX, markerY); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = liveColor;
+          ctx.beginPath(); ctx.arc(markerX, markerY, 4, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [dims, theme, tr, visual, pitchColor, speed, playing]);
+
+  return (
+    <div ref={hostRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0 }} />
+    </div>
+  );
+}
+
+Object.assign(window, { fftInPlace, detectPitch, harmonicsAt, harmonicsToCoeffs, alignPhase, resampleBuffer, analyzeClip, AudioInput, ListenPanel, AudioComparisonCanvas, INSTRUMENTS, synthInstrument, monoClip, shapeThumbPath });
 
 </script>
 <script type="text/babel">
@@ -4600,7 +4649,7 @@ function App() {
           padding: '14px 20px',
           pointerEvents: 'none',
         }}>
-          <div style={{
+          {mode !== 'audio' && <div style={{
             fontFamily: 'JetBrains Mono, monospace', fontSize: 11, letterSpacing: 1.5,
             textTransform: 'uppercase', color: theme.muted,
           }}>
@@ -4617,7 +4666,8 @@ function App() {
                   : (coeffs ? `${N} / ${coeffs.length} ${tr.harmonics}` : tr.ready)}
             <span style={{ margin: '0 10px', color: theme.line }}>│</span>
             t = {t.toFixed(3)}
-          </div>
+          </div>}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, pointerEvents: 'auto', marginLeft: 'auto' }}>
           <div style={{
             display: 'flex', gap: 4, pointerEvents: 'auto',
             background: theme.panel, border: `1px solid ${theme.line}`, borderRadius: 99,
@@ -4664,6 +4714,7 @@ function App() {
               </button>
             ))}
           </div>
+          </div>
         </div>
 
         {/* Canvas */}
@@ -4687,6 +4738,15 @@ function App() {
           isRecording={recording}
           autoRotate={autoRotate}
           onViewChange={onView3d}
+        />
+        ) : mode === 'audio' ? (
+        <AudioComparisonCanvas
+          theme={theme}
+          tr={tr}
+          visual={audioVisual}
+          pitchColor={audioPitchColor}
+          speed={activeSpeed}
+          playing={playing && !isDrawing}
         />
         ) : (
         <FourierCanvas
@@ -4799,11 +4859,11 @@ function App() {
           </div>
         )}
 
-        {/* Listen result: averaged spectrum, harmonics, pitch track */}
+        {/* Listen result: current pitch and harmonics */}
         {mode === 'audio' && audioResult && (
           <div style={{ position: 'absolute', top: 52, left: 20, zIndex: 3 }}>
             <ListenPanel result={audioResult} theme={theme} tr={tr}
-              visual={audioVisual} pitchColor={audioPitchColor} phase={t} />
+              visual={audioVisual} pitchColor={audioPitchColor} />
           </div>
         )}
 
