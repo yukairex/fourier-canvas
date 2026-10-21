@@ -3246,7 +3246,7 @@ function ListenPanel({ result, theme, tr, visual, pitchColor }) {
 
 // In Listen mode the main canvas is the explanatory comparison itself: the
 // epicycle system on the left and the matching waveform on the right.
-function AudioComparisonCanvas({ theme, tr, visual, pitchColor, speed, playing }) {
+function AudioComparisonCanvas({ theme, tr, visual, visuals = [], pitchColor, speed, playing }) {
   const canvasRef = React.useRef(null);
   const hostRef = React.useRef(null);
   const phaseRef = React.useRef(0);
@@ -3373,11 +3373,47 @@ function AudioComparisonCanvas({ theme, tr, visual, pitchColor, speed, playing }
           ctx.beginPath(); ctx.arc(markerX, markerY, 4, 0, Math.PI * 2); ctx.fill();
         }
       }
+
+      // Additional loaded tracks share the same time axis and scale. Their
+      // curves are layered over the primary track with distinct dash rhythms;
+      // colour still follows each track's detected pitch.
+      visuals.slice(1).forEach((item, trackIndex) => {
+        const v = item.visual;
+        if (!v) return;
+        const extraColor = item.pitchColor || theme.trace;
+        const extraCoeffs = v.coeffs || [];
+        ctx.save();
+        ctx.globalAlpha = 0.82;
+        ctx.setLineDash(trackIndex % 2 ? [3, 4] : [8, 4]);
+        ctx.strokeStyle = extraColor;
+        ctx.lineWidth = 2;
+        if (extraCoeffs.length) {
+          ctx.beginPath();
+          for (let i = 0; i <= 500; i++) {
+            const p = fourierTip(extraCoeffs, i / 500, extraCoeffs.length);
+            const x = shapeX + p.x * drawScale, y = midY - p.y * drawScale;
+            if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+          }
+          ctx.stroke();
+        }
+        if (v.waveform && v.waveform.length && extraCoeffs.length) {
+          const reconstructed = Array.from({ length: v.waveform.length }, (_, i) =>
+            fourierTip(extraCoeffs, i / v.waveform.length, extraCoeffs.length).y);
+          const xAt = (i, n) => rightX + 16 + (i / Math.max(1, n - 1)) * (panelW - 32);
+          ctx.beginPath();
+          for (let i = 0; i < reconstructed.length; i++) {
+            const x = xAt(i, reconstructed.length), y = midY - reconstructed[i] * drawScale;
+            if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+      });
       raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [dims, theme, tr, visual, pitchColor, speed, playing]);
+  }, [dims, theme, tr, visual, visuals, pitchColor, speed, playing]);
 
   return (
     <div ref={hostRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -3668,6 +3704,8 @@ function App() {
   const [audioAvg, setAudioAvg] = useState('complex');     // 'complex' | 'magnitude'
   const [audioStereo, setAudioStereo] = useState(false);
   const [audioResult, setAudioResult] = useState(null);
+  const [audioTracks, setAudioTracks] = useState([]);      // { id, name, clip, result }
+  const audioDuration = audioTracks.length ? Math.max(...audioTracks.map((track) => track.clip.duration)) : 0;
   const [audioBusy, setAudioBusy] = useState(false);
   const [audioError, setAudioError] = useState(null);      // 'decode' | { mic: reason, detail }
   const [audioPlaying, setAudioPlaying] = useState(false);
@@ -3698,6 +3736,24 @@ function App() {
     const midi = audioVisual ? audioVisual.midi : (audioResult && audioResult.medianMidi);
     return audioPitchToColor(midi);
   }, [audioVisual, audioResult]);
+  const audioTrackVisuals = useMemo(() => audioTracks.map((track) => {
+    const result = track.result;
+    if (!result || !result.segments || !result.segments.length) return { ...track, visual: null, pitchColor: theme.trace };
+    const xs = result.segments;
+    let hi = 0;
+    while (hi < xs.length && xs[hi].t < audioPos) hi++;
+    const b = xs[Math.min(hi, xs.length - 1)], a = xs[Math.max(0, hi - 1)];
+    const raw = Math.max(0, Math.min(1, (audioPos - a.t) / Math.max(1e-6, b.t - a.t)));
+    const mix = raw * raw * (3 - 2 * raw);
+    const ma = a.midi == null ? b.midi : a.midi, mb = b.midi == null ? ma : b.midi;
+    const visual = {
+      coeffs: blendAudioCoeffs(a.coeffs, b.coeffs, mix),
+      midi: ma == null ? result.medianMidi : ma + (mb - ma) * mix,
+      level: a.level + (b.level - a.level) * mix,
+      waveform: blendAudioWaveform(a.waveform, b.waveform, mix),
+    };
+    return { ...track, visual, pitchColor: audioPitchToColor(visual.midi) };
+  }), [audioTracks, audioPos, theme.trace]);
   const [recInfo, setRecInfo] = useState(null);            // { start, t, level } while recording
   const [instKey, setInstKey] = useState(null);            // active instrument preset
   const [instThumbs, setInstThumbs] = useState({});        // key → SVG path of its averaged shape
@@ -3720,48 +3776,91 @@ function App() {
     return a;
   };
 
-  const loadAudioFile = async (file, name = file && file.name) => {
-    if (!file) return;
+  const loadAudioFiles = async (files) => {
+    const list = Array.from(files || []);
+    if (!list.length) return;
     const a = ensureAudio();
     a.ctx.resume(); // inside the gesture, so later playback is allowed
     setMode('audio');
     setAudioBusy(true);
     try {
-      const buf = await a.decode(file);
+      const decoded = await Promise.all(list.map(async (file) => ({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name: file.name,
+        clip: await a.decode(file),
+        result: null,
+      })));
       a.stopPlayback();
       setAudioPlaying(false);
       setAudioPos(0);
-      setAudioName(name);
+      const next = [...audioTracks, ...decoded];
+      setAudioTracks(next);
+      setAudioName(next.map((t) => t.name).join(' + '));
       setAudioError(null);
       setInstKey(null);
-      setClip(buf);
+      setClip(next[0].clip);
     } catch (e) {
       setAudioError('decode');
       setAudioBusy(false);
     }
   };
+  const loadAudioFile = async (file, name = file && file.name) => {
+    if (!file) return;
+    const source = name === file.name ? file : new File([file], name || 'audio', { type: file.type });
+    return loadAudioFiles([source]);
+  };
+  const removeAudioTrack = (id) => {
+    const next = audioTracks.filter((track) => track.id !== id);
+    setAudioTracks(next);
+    setAudioName(next.map((track) => track.name).join(' + '));
+    setClip(next.length ? next[0].clip : null);
+    setAudioResult(next.length ? next[0].result : null);
+    if (!next.length && audioIn) { audioIn.stopPlayback(); setAudioPlaying(false); setAudioPos(0); }
+  };
+  const clearAudioTracks = () => {
+    setAudioTracks([]); setClip(null); setAudioResult(null); setAudioName(''); setAudioPos(0);
+    if (audioIn) audioIn.stopPlayback();
+    setAudioPlaying(false);
+  };
 
   // Re-analyse whenever the clip or a setting changes.
   useEffect(() => {
-    if (!clip) return;
+    if (!clip || !audioTracks.length) return;
     let cancelled = false;
     setAudioBusy(true);
     const id = setTimeout(async () => {
-      const rs = await resampleBuffer(clip, audioRate || clip.sampleRate);
+      const analysed = [];
+      for (const track of audioTracks) {
+        const rs = await resampleBuffer(track.clip, audioRate || track.clip.sampleRate);
+        if (cancelled) return;
+        analysed.push({ ...track, result: analyzeClip(rs, { fftSize: audioFFT, K: audioK, method: audioAvg, stereoXY: audioStereo }), resampled: rs });
+      }
       if (cancelled) return;
-      const res = analyzeClip(rs, { fftSize: audioFFT, K: audioK, method: audioAvg, stereoXY: audioStereo });
-      if (cancelled) return;
+      const res = analysed[0].result;
       // Play back what was analysed, so the chosen sample rate is audible
       if (audioIn) {
-        audioIn.setBuffer(rs instanceof AudioBuffer ? rs : clip);
+        const sources = analysed.map((track) => track.resampled);
+        const mixRate = sources[0].sampleRate;
+        const mixed = audioIn.ctx.createBuffer(1, Math.max(...sources.map((source) => source.length)), mixRate);
+        const out = mixed.getChannelData(0);
+        for (const source of sources) {
+          const gain = 1 / Math.sqrt(sources.length);
+          for (let ch = 0; ch < source.numberOfChannels; ch++) {
+            const input = source.getChannelData(ch), channelGain = gain / source.numberOfChannels;
+            for (let i = 0; i < input.length; i++) out[i] += input[i] * channelGain;
+          }
+        }
+        audioIn.setBuffer(mixed);
         if (autoPlayRef.current) { autoPlayRef.current = false; audioIn.play(0); setAudioPlaying(true); }
       }
       setAudioResult(res);
+      setAudioTracks(analysed.map(({ resampled, ...track }) => track));
       setAudioBusy(false);
       setPlaying(true);
     }, 60);
     return () => { cancelled = true; clearTimeout(id); };
-  }, [clip, audioIn, audioRate, audioFFT, audioK, audioAvg, audioStereo]);
+  }, [clip, audioIn, audioRate, audioFFT, audioK, audioAvg, audioStereo,
+      audioTracks.map((t) => t.id).join('|')]);
 
   const loadInstrument = (key) => {
     const a = ensureAudio();
@@ -3776,6 +3875,7 @@ function App() {
     setAudioError(null);
     setInstKey(key);
     autoPlayRef.current = true;
+    setAudioTracks([{ id: `preset-${key}-${Date.now()}`, name: `${tr.inst[key]} · C4 E4 G4 C5`, clip: buf, result: null }]);
     setClip(buf);
   };
 
@@ -4291,8 +4391,8 @@ function App() {
         <>
         <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <SectionLabel theme={theme}>{tr.audioSource}</SectionLabel>
-          <input ref={audioFileRef} type="file" accept="audio/*,video/*" style={{ display: 'none' }}
-            onChange={(e) => { loadAudioFile(e.target.files[0]); e.target.value = ''; }} />
+          <input ref={audioFileRef} type="file" accept="audio/*,video/*" multiple style={{ display: 'none' }}
+            onChange={(e) => { loadAudioFiles(e.target.files); e.target.value = ''; }} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <Button theme={theme} primary={!clip || !!recInfo} onClick={toggleRecord}>
               {recInfo ? tr.audioRecStop : tr.audioRecord}
@@ -4314,17 +4414,29 @@ function App() {
           )}
           {clip && !recInfo && audioIn && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{
-                fontSize: 11, color: theme.ink, fontFamily: 'JetBrains Mono, monospace',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{audioName}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {audioTracks.map((track, index) => (
+                  <div key={track.id} style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                    <span style={{
+                      width: 18, color: theme.muted, fontSize: 9, fontFamily: 'JetBrains Mono, monospace',
+                    }}>{String(index + 1).padStart(2, '0')}</span>
+                    <span style={{
+                      flex: 1, minWidth: 0, fontSize: 11, color: theme.ink, fontFamily: 'JetBrains Mono, monospace',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{track.name}</span>
+                    <button onClick={() => removeAudioTrack(track.id)} aria-label={`${tr.clear} ${track.name}`}
+                      style={{ background: 'none', border: 0, color: theme.muted, cursor: 'pointer', padding: '0 3px', fontSize: 15 }}>×</button>
+                  </div>
+                ))}
+                {audioTracks.length > 1 && <Button theme={theme} small onClick={clearAudioTracks}>{tr.clear}</Button>}
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Button theme={theme} small onClick={toggleAudioPlay}>{audioPlaying ? tr.pause : tr.play}</Button>
-                <input type="range" min={0} max={clip.duration} step={0.01} value={audioPos}
+                <input type="range" min={0} max={audioDuration} step={0.01} value={audioPos}
                   onChange={(e) => { const v = parseFloat(e.target.value); audioIn.seek(v); setAudioPos(v); }}
                   style={{ flex: 1, minWidth: 0, accentColor: theme.accent }} />
                 <span style={{ fontSize: 10, color: theme.muted, fontFamily: 'JetBrains Mono, monospace' }}>
-                  {fmtTime(audioPos)} / {fmtTime(clip.duration)}
+                  {fmtTime(audioPos)} / {fmtTime(audioDuration)}
                 </span>
               </div>
             </div>
@@ -4737,6 +4849,7 @@ function App() {
           theme={theme}
           tr={tr}
           visual={audioVisual}
+          visuals={audioTrackVisuals}
           pitchColor={audioPitchColor}
           speed={activeSpeed}
           playing={playing && !isDrawing}
